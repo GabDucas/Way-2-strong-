@@ -1,0 +1,76 @@
+% Calcul de torque aux articulations
+% Équipe 6 - GRO68 H24
+% Auteur : Simon Lamontagne
+
+
+% ------ Corps ----
+NewtonianFrame N
+
+RigidBody A % haut-bras 
+RigidBody B % avant-bras
+RigidBody C % main
+Point Pload(C) % poids tenu par la main
+
+
+% ------ Dimensions ----
+Constant g = 9.81 m/s^2
+
+% Masse des corps
+Constant mA = 220/1000 kg %À verifier
+Constant mB = 220/1000 kg %À verifier
+Constant mC = 220/1000 kg %À verifier
+Constant mPload = 220/1000 kg %À verifier
+
+% Longueurs des corps
+Constant La = 0.1 m %À verifier
+Constant Lb = 0.1 m %À verifier
+Constant Lc = 0.1 m %À verifier
+
+% Position des centres de masse des corps
+Constant Lacm = 0.1/2 m %À verifier
+Constant Lbcm = 0.1/2 m %À verifier
+Constant Lccm = 0.1/2 m %À verifier
+
+
+% ------ Variables de résolution ----
+Constant theta_a = 90 deg
+Constant theta_b = 90 deg
+Constant theta_c = 90 deg
+
+Variable Tm_epaule
+Variable Tm_coude
+Variable Tm_poignet
+
+
+% ------ Mouvements ----
+A.RotateZ(N,theta_a)
+B.RotateZ(N,theta_b)
+C.RotateZ(N,theta_c)
+
+Ao.setPosition(No, 0>)
+Acm.setPosition(Ao, -Lacm*Ay>)
+
+Bo.setPosition(Ao, -La*Ay>)
+Bcm.setPosition(Bo, -Lbcm*By>)
+
+Co.setPosition(Bo, -Lb*By>)
+Ccm.setPosition(Co, -Lccm*Cy>)
+
+Pload.setPosition(Co, -Lc*Cy>)
+
+
+% ------ Forces ----
+Acm.AddForce(-mA*g*Ny>)
+Bcm.AddForce(-mB*g*Ny>)
+Ccm.AddForce(-mC*g*Ny>)
+Pload.AddForce(-mPload*g*Ny>)
+
+A.AddTorque(N,Tm_epaule*Nz>)
+B.AddTorque(A,Tm_coude*Nz>)
+C.AddTorque(B,Tm_poignet*Nz>)
+
+
+% ------ Resolutions ----
+EQU[1] = dot(Nz>, A.GetMomentOfForces(Ao))
+EQU[2] = dot(Nz>, B.GetMomentOfForces(Bo))
+EQU[3] = dot(Nz>, C.GetMomentOfForces(Co))
