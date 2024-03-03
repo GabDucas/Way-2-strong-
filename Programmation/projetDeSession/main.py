@@ -3,10 +3,6 @@ import time
 import customtkinter
 import serial
 import threading
-import matplotlib
-
-import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 import numpy as np
 
 
@@ -38,25 +34,35 @@ class RealTimePlot(QMainWindow):
         self.curve = self.plot_widget.plot()
 
         self.data = deque(maxlen=10000)  # Store data points
-        self.x = 0  # Initial x value
+        self.x = 0
         self.y = 0
-
+        self.data.append((1, 1))
         # Serial port initialization (change the port and baud rate accordingly)
-        self.serial_port = serial.Serial('COM12', 9600)
+        #self.serial_port = serial.Serial('COM12', 9600)
 
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update_plot)
-        self.timer.start(50)  # Update plot every 50 milliseconds
+        self.timer.start(5000)  # Update plot every 50 milliseconds
 
 
     def update_plot(self):
         try:
-            if self.serial_port.in_waiting > 0:
-                value = float(self.serial_port.readline().decode().strip())
-                self.data.append((self.x, value))
-                self.y += 1
-                self.x += 1
-                #le problème est ici quand tu pognes
+            #if self.serial_port.in_waiting > 0:
+                angle = np.pi/12 #float(self.serial_port.readline().decode().strip())
+                angle2 = np.pi/6
+                l1 = 6
+                l2 = 4
+                self.x = l1*np.cos(angle)
+                self.y = l1*np.sin(angle)
+                print(self.x, self.y)
+
+                self.data.append((self.x, self.y))
+
+                self.x = l1*np.cos(angle) + l2*np.cos(angle)
+                self.y = l1*np.sin(angle) + l2*np.sin(angle2+angle)
+                print(self.x, self.y)
+                self.data.append((self.x, self.y))
+
                 self.curve.setData([x for x, _ in self.data], [y for _, y in self.data])
                 if(self.y % 25 == 0):
                     self.plot_widget.setXRange(self.y, self.y+25)
