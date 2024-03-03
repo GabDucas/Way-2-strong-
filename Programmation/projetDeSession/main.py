@@ -27,45 +27,55 @@ class RealTimePlot(QMainWindow):
         self.widget.setLayout(self.layout)
 
         self.plot_widget = pg.PlotWidget()
-        self.plot_widget.setXRange(0, 25)
-        self.plot_widget.setYRange(0,8)
+        self.plot_widget.setXRange(-12, 12)
+        self.plot_widget.setYRange(-12,12)
         self.layout.addWidget(self.plot_widget)
 
-        self.curve = self.plot_widget.plot()
+        self.plotGraph = self.plot_widget
+        self.setCentralWidget(self.plotGraph)
+        self.pen = pg.mkPen(color=(255, 0, 0), width=15)
 
-        self.data = deque(maxlen=10000)  # Store data points
+        self.data = deque(maxlen=100)  # Store data points
         self.x = 0
         self.y = 0
-        self.data.append((1, 1))
         # Serial port initialization (change the port and baud rate accordingly)
-        #self.serial_port = serial.Serial('COM12', 9600)
+        self.serial_port = serial.Serial('COM12', 9600)
 
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update_plot)
-        self.timer.start(5000)  # Update plot every 50 milliseconds
+        self.timer.start(200)  # Update plot every 50 milliseconds
+
+
+
 
 
     def update_plot(self):
+        self.plotGraph.clear()
         try:
-            #if self.serial_port.in_waiting > 0:
-                angle = np.pi/12 #float(self.serial_port.readline().decode().strip())
-                angle2 = np.pi/6
+            if self.serial_port.in_waiting > 0:
+
+                stringAngles = self.serial_port.readline().decode().strip().split()
+                angle = float(stringAngles[0])
+                angle2 = float(stringAngles[1])
+
                 l1 = 6
                 l2 = 4
-                self.x = l1*np.cos(angle)
-                self.y = l1*np.sin(angle)
-                print(self.x, self.y)
 
-                self.data.append((self.x, self.y))
+                point1x = l1*np.cos(angle)
+                point1y = l1*np.sin(angle)
+                point1 = (point1x, point1y)
 
-                self.x = l1*np.cos(angle) + l2*np.cos(angle)
-                self.y = l1*np.sin(angle) + l2*np.sin(angle2+angle)
-                print(self.x, self.y)
-                self.data.append((self.x, self.y))
+                self.data.append((1, 1))
+                self.data.append(point1)
 
-                self.curve.setData([x for x, _ in self.data], [y for _, y in self.data])
-                if(self.y % 25 == 0):
-                    self.plot_widget.setXRange(self.y, self.y+25)
+                point2x = l1*np.cos(angle) + l2*np.cos(angle2)
+                point2y = l1*np.sin(angle) + l2*np.sin(angle2)
+                point2 = (point2x, point2y)
+
+                self.data.append(point2)
+                self.plotGraph.plot([x for x, _ in self.data], [y for _, y in self.data], pen=self.pen)
+                self.data.clear()
+
 
         except Exception as e:
             print(e)
