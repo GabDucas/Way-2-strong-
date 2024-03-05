@@ -26,6 +26,7 @@ class RealTimePlot(QMainWindow):
         self.layout = QVBoxLayout()
         self.widget.setLayout(self.layout)
 
+
         self.plot_widget = pg.PlotWidget()
         self.plot_widget.setXRange(-12, 12)
         self.plot_widget.setYRange(-12,12)
@@ -33,17 +34,17 @@ class RealTimePlot(QMainWindow):
 
         self.plotGraph = self.plot_widget
         self.setCentralWidget(self.plotGraph)
-        self.pen = pg.mkPen(color=(255, 0, 0), width=15)
+        self.pen = pg.mkPen(color=(255, 0, 0), width=15) #permet de donner un style au ligne de graphique
 
-        self.data = deque(maxlen=100)  # Store data points
+        self.data = deque(maxlen=4)  # Liste de data contenant les angles
         self.x = 0
         self.y = 0
-        # Serial port initialization (change the port and baud rate accordingly)
+
         self.serial_port = serial.Serial('COM12', 9600)
 
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update_plot)
-        self.timer.start(200)  # Update plot every 50 milliseconds
+        self.timer.start(200)  # Update plot every ___ milliseconds
 
 
 
@@ -54,25 +55,35 @@ class RealTimePlot(QMainWindow):
         try:
             if self.serial_port.in_waiting > 0:
 
+                #Permet de lire les angles de l'arduino et les placer dans un tableau
                 stringAngles = self.serial_port.readline().decode().strip().split()
                 angle = float(stringAngles[0])
                 angle2 = float(stringAngles[1])
+                angle3 = float(stringAngles[2])
 
+                #Longueur entre les points d'imu
                 l1 = 6
                 l2 = 4
+                l3 = 2
+
+                #Ajoute un point à (1,1)
+                self.data.append((1, 1))
 
                 point1x = l1*np.cos(angle)
                 point1y = l1*np.sin(angle)
                 point1 = (point1x, point1y)
-
-                self.data.append((1, 1))
                 self.data.append(point1)
 
                 point2x = l1*np.cos(angle) + l2*np.cos(angle2)
                 point2y = l1*np.sin(angle) + l2*np.sin(angle2)
                 point2 = (point2x, point2y)
-
                 self.data.append(point2)
+
+                point3x = l1*np.cos(angle) + l2*np.cos(angle2) + l3*np.cos(angle3)
+                point3y = l1*np.sin(angle) + l2*np.sin(angle2) + l3*np.cos(angle3)
+                point3 = (point3x, point3y)
+                self.data.append(point3)
+
                 self.plotGraph.plot([x for x, _ in self.data], [y for _, y in self.data], pen=self.pen)
                 self.data.clear()
 
@@ -90,6 +101,7 @@ class Application(customtkinter.CTk):
         self.title('Exo')
         self.geometry('700X500')
 
+        #Initialisation des différentes affaires de l'interface
         self.labelTitre = customtkinter.CTkLabel(master=self, font=("Arial Black", 32), text="Info Exosquelette")
         self.labelMoteurPoignet = customtkinter.CTkLabel(master=self, font=("Arial", 16), text="Moteur Poignet")
         self.labelMoteurCoude = customtkinter.CTkLabel(master=self, font=("Arial", 16), text="Moteur Coude")
@@ -106,7 +118,7 @@ class Application(customtkinter.CTk):
         self.boutonEpaule = customtkinter.CTkButton(master=self, text="Envoie commande épaule",
                                                     command=self.commandeBoutonEpaule)
 
-        ##########################################ENDROIT QUI PLACE LES SHIT######################################################################################3
+        #Initialisation de la géométrie des items dans l'interface
         self.labelTitre.grid(row=0, column=1, pady=40)
 
         self.labelMoteurPoignet.grid(row=2, column=0, padx=5, pady=15)
@@ -125,7 +137,8 @@ class Application(customtkinter.CTk):
         self.menu.set("menu")
         self.mainloop()
 
-    # menu.grid(row=1, column=3, padx=5, pady=5)
+        #Possibilité d'ajout d'un menu
+        # menu.grid(row=1, column=3, padx=5, pady=5)
 
     def commandeBoutonPoignet(self):
         if self.entreeCoude.get() == "" and self.entreeEpaule.get() == "":
@@ -145,6 +158,7 @@ class Application(customtkinter.CTk):
         else:
             print("Veuiller vider les zones de textes")
 
+#Permet de lançer le graph dans un autre thread
 def Graph():
     app = QApplication(sys.argv)
     window = RealTimePlot()
