@@ -15,6 +15,32 @@ from collections import deque
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 
+angleEpaule = 0
+angleCoude = 0
+anglePoignet = 0
+
+commandeMoteur = ""
+commandeAEnvoyer = False
+
+
+class gestionPort():
+    def __init__(self):
+        self.stringAngles = [0,0,0]
+        self.serial_port = serial.Serial('COM12', 9600, timeout=1)
+        self.serial_port.flush()
+    def lireValeurs(self) -> []:
+
+        if self.serial_port.in_waiting > 0:
+            self.stringAngles = self.serial_port.readline().decode('utf-8').strip().split(',')
+
+        return self.stringAngles
+    def envoieCommande(self):
+        global commandeMoteur
+        commandeMoteur = commandeMoteur + "\n"
+        print(commandeMoteur.encode("utf-8"))
+        self.serial_port.write(commandeMoteur.encode("utf-8"))
+
+
 class RealTimePlot(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -41,52 +67,41 @@ class RealTimePlot(QMainWindow):
         self.x = 0
         self.y = 0
 
-        self.serial_port = serial.Serial('COM12', 9600)
-
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update_plot)
         self.timer.start(200)  # Update plot every ___ milliseconds
 
-
-
-
-
     def update_plot(self):
         self.plotGraph.clear()
         try:
-            if self.serial_port.in_waiting > 0:
 
-                #Permet de lire les angles de l'arduino et les placer dans un tableau
-                stringAngles = self.serial_port.readline().decode().strip().split()
-                angle = float(stringAngles[0])
-                angle2 = float(stringAngles[1])
-                angle3 = float(stringAngles[2])
+            #Permet de lire les angles de l'arduino et les placer dans un tableau
 
-                #Longueur entre les points d'imu
-                l1 = 6
-                l2 = 4
-                l3 = 2
+            #Longueur entre les points d'imu
+            l1 = 6
+            l2 = 4
+            l3 = 2
 
-                #Ajoute un point à (1,1)
-                self.data.append((1, 1))
+            #Ajoute un point à (1,1)
+            self.data.append((1, 1))
 
-                point1x = l1*np.cos(angle)
-                point1y = l1*np.sin(angle)
-                point1 = (point1x, point1y)
-                self.data.append(point1)
+            point1x = l1*np.cos(angleEpaule)
+            point1y = l1*np.sin(angleEpaule)
+            point1 = (point1x, point1y)
+            self.data.append(point1)
 
-                point2x = l1*np.cos(angle) + l2*np.cos(angle2)
-                point2y = l1*np.sin(angle) + l2*np.sin(angle2)
-                point2 = (point2x, point2y)
-                self.data.append(point2)
+            point2x = point1x + l2*np.cos(angleCoude)
+            point2y = point1y + l2*np.sin(angleCoude)
+            point2 = (point2x, point2y)
+            self.data.append(point2)
 
-                point3x = l1*np.cos(angle) + l2*np.cos(angle2) + l3*np.cos(angle3)
-                point3y = l1*np.sin(angle) + l2*np.sin(angle2) + l3*np.cos(angle3)
-                point3 = (point3x, point3y)
-                self.data.append(point3)
+            point3x = point2x + l3*np.cos(anglePoignet)
+            point3y = point2y + l3*np.cos(anglePoignet)
+            point3 = (point3x, point3y)
+            self.data.append(point3)
 
-                self.plotGraph.plot([x for x, _ in self.data], [y for _, y in self.data], pen=self.pen)
-                self.data.clear()
+            self.plotGraph.plot([x for x, _ in self.data], [y for _, y in self.data], pen=self.pen)
+            self.data.clear()
 
 
         except Exception as e:
@@ -139,13 +154,17 @@ class Application(customtkinter.CTk):
         self.mainloop()
 
         #Possibilité d'ajout d'un menu
-        # menu.grid(row=1, column=3, padx=5, pady=5)
+        self.menu.grid(row=1, column=3, padx=5, pady=5)
 
     def commandeBoutonPoignet(self):
-        if self.entreeCoude.get() == "" and self.entreeEpaule.get() == "":
-            print(self.entreePoignet.get())
-        else:
-            print("Veuiller vider les zones de textes")
+        global commandeMoteur
+        global commandeAEnvoyer
+
+        commandeAEnvoyer = True
+        #mettre des condition pour le get
+        commandeMoteur = self.entreePoignet.get()
+
+
 
     def commandeBoutonCoude(self):
         if self.entreePoignet.get() == "" and self.entreeEpaule.get() == "":
@@ -166,6 +185,25 @@ def Graph():
     window.show()
     sys.exit(app.exec_())
 
+def gestionPortSerie():
+    global angleCoude
+    global angleEpaule
+    global anglePoignet
+    global commandeAEnvoyer
+    objet = gestionPort()
+    while 1:
+        stringAngle = objet.lireValeurs()
+        angleEpaule = float(stringAngle[0])
+        angleCoude = float(stringAngle[1])
+        anglePoignet = float(stringAngle[2])
+        print(stringAngle)
+
+        if(commandeAEnvoyer == True):
+            objet.envoieCommande()
+            commandeAEnvoyer = False
+
+        time.sleep(0.2)
+
 if __name__ == "__main__":
 
     # threadLecture = threading.Thread(target=lirePortSerie)
@@ -173,6 +211,7 @@ if __name__ == "__main__":
 
     threadApp = threading.Thread(target=Application).start()
     threadGraph = threading.Thread(target=Graph).start()
+    threadLireAngle = threading.Thread(target=gestionPortSerie).start()
 
 
 
