@@ -1,5 +1,6 @@
 import time
 
+import PyQt5
 import customtkinter
 import serial
 import threading
@@ -34,9 +35,9 @@ class RealTimePlot(QMainWindow):
 
         self.plotGraph = self.plot_widget
         self.setCentralWidget(self.plotGraph)
-        self.pen = pg.mkPen(color=(255, 0, 0), width=15) #permet de donner un style au ligne de graphique
+        self.pen = pg.mkPen(color=(255, 0, 127), width=15) #permet de donner un style au ligne de graphique
 
-        self.data = deque(maxlen=4)  # Liste de data contenant les angles
+        self.data = deque(maxlen=1000)  # Liste de data contenant les angles
         self.x = 0
         self.y = 0
 
