@@ -10,7 +10,8 @@ RigidBody A % haut-bras
 RigidBody B % avant-bras
 RigidBody C % main
 Point Pload(C) % poids tenu par la main
-
+System COUDE(B,C,Pload)
+System POIGNET(C,Pload)
 
 % ------ Dimensions ----
 Constant g = 9.81 m/s^2
@@ -71,6 +72,6 @@ C.AddTorque(B,Tm_poignet*Nz>)
 
 
 % ------ Resolutions ----
-EQU[1] = dot(Nz>, A.GetMomentOfForces(Ao))
-EQU[2] = dot(Nz>, B.GetMomentOfForces(Bo))
-EQU[3] = dot(Nz>, C.GetMomentOfForces(Co))
+EQU[4] = dot(Nz>, System.GetMomentOfForces(Ao))
+EQU[5] = dot(Nz>, COUDE.GetMomentOfForces(Bo))
+EQU[6] = dot(Nz>, POIGNET.GetMomentOfForces(Co))
