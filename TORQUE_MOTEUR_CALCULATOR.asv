@@ -68,7 +68,7 @@ Fg_shaft = m_shaft*g;
 T_mass_coude = L_coude2cm_*Fg_coude2 + L_Bbeam_*Fg_Beam + L_c1m_*Fg_poignet1 + L_cTm_p_*Fg_moteurp + Fg_vis*(Lv1_+Lv2_+Lv3_+Lv4_) + Fg_vis_moteur*L_vis_moteur_ + Fg_shaft*Lshaft_;
 Tm_coude = Tm_poignet + sin(thetaB)*(LB_*(Fgc+Fg_pload)+T_mass_coude)
 
-masse_totale_coude = m_coude2 + mBeam + m_poignet1 + m_moteurp + m_vis*4 + m_vis_moteur + m_shaft;
+masse_totale_coude = m_coude2 + mBeam + m_poignet1 + m_moteurp + m_vis + m_vis_moteur + m_shaft;
 Fg_totale_coude = masse_totale_coude*g;
 
 %Distance des différents centre de masse par rapport au centre de masse "L_coude2cm_"
@@ -84,7 +84,8 @@ Lshaft_R = Lshaft_ - L_coude2cm_;
 L_vis_moteur_R = L_vis_moteur_ - L_coude2cm_;
 
 cm_coude = (m_coude2*L_coude2cm_R + mBeam*L_Bbeam_R + m_poignet1*L_c1m_R + m_moteurp*L_cTm_p_R + m_vis*(Lv1_R + Lv2_R + Lv3_R + Lv4_R) + m_vis_moteur*L_vis_moteur_R + m_shaft*Lshaft_R)/(masse_totale_coude);
-L_cm_coude = cm_coude + L_coude2cm_;
-Tm_coude_CM = Tm_poignet + sin(thetaB)*(LB_*(Fgc+Fg_pload)+(L_cm_coude*Fg_totale_coude))
+L_cm_poignet = cm_coude + L_coude2cm_;
+Tm_coude_CM = Tm_poignet + sin(thetaB)*(LB_*(Fgc+Fg_pload)+(L_cm_poignet*Fg_totale_coude))
+
 
 
