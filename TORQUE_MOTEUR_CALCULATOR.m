@@ -36,10 +36,10 @@ L_coude2 = 65*10^-3;%m
 L_coude2cm_ = 27*10^-3;%m
 L_dBeam = 4.23*10^-3;%m
 L_Bbeam_ = L_coude2+(L_dBeam/2);%m
-L_poignet1cm = 40*10^-3;%m
-L_poignet1Moteur = 58*10^-3;%m
+L_poignet1cm = 40*10^-3;%m À CHANGER file:///C:/Users/sim11/OneDrive%20-%20USherbrooke/Documents/(a)SESSION_S4/PROJET/XM430XH430-Moment-of-Inertia.pdf
+L_petitMoteur = 58*10^-3;%m
 L_c1m_ = L_coude2+L_dBeam+L_poignet1cm;%m
-L_cTm_p_ = L_coude2+L_dBeam+L_poignet1Moteur;%m
+L_cTm_p_ = L_coude2+L_dBeam+L_petitMoteur;%m
 % A VÉRIFIER
 Lv1_ = 38*10^-3;%m
 Lv2_ = 58*10^-3;%m
@@ -98,9 +98,8 @@ L_epaule2 = 65*10^-3;%m
 L_epaule2cm_ = 27*10^-3;%m
 
 L_coude1cm = 40*10^-3;%m
-L_coude1Moteur = 58*10^-3;%m
 L_b1m_ = L_epaule2+L_dBeam+L_coude1cm;%m
-L_bTm_p_ = L_epaule2+L_dBeam+L_coude1Moteur;%m
+L_bTm_p_ = L_epaule2+L_dBeam+L_petitMoteur;%m
 
 LA_ = L_cTm_p_+12*10^-3;%m
 
