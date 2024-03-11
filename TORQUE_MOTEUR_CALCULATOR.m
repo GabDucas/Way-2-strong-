@@ -4,6 +4,8 @@ clear all
 format long
 
 %% Constantes et données connus
+TORQUE_PETIT_MOTEUR_MAX = 3;%Nm
+TORQUE_GROS_MOTEUR_MAX = 3;%Nm
 mPload = 0.15;%kg
 
 mC = 16*10^-3;%kg
@@ -84,7 +86,51 @@ Lshaft_R = Lshaft_ - L_coude2cm_;
 L_vis_moteur_R = L_vis_moteur_ - L_coude2cm_;
 
 cm_coude = (m_coude2*L_coude2cm_R + mBeam*L_Bbeam_R + m_poignet1*L_c1m_R + m_moteurp*L_cTm_p_R + m_vis*(Lv1_R + Lv2_R + Lv3_R + Lv4_R) + m_vis_moteur*L_vis_moteur_R + m_shaft*Lshaft_R)/(masse_totale_coude);
-L_cm_coude = cm_coude + L_coude2cm_;
+L_cm_coude = cm_coude + L_coude2cm_;%À PARTIR DU CENTRE DES TROUES MOTEUR (OÙ LES MOTEURS APPLIQUE LEURS TORQUES EN GROS)
 Tm_coude_CM = Tm_poignet + sin(thetaB)*(LB_*(Fgc+Fg_pload)+(L_cm_coude*Fg_totale_coude))
+
+%% Torque Épaule
+
+%VÉRIFIER TOUTE LES MESURE J'AI COPIER CEUX DE COUDE PUISQUE DEVERAIS ÊTRE
+%LA MÊME CHOSE MAIS À VÉRIFIER
+
+L_epaule2 = 65*10^-3;%m
+L_epaule2cm_ = 27*10^-3;%m
+
+L_coude1cm = 40*10^-3;%m
+L_coude1Moteur = 58*10^-3;%m
+L_b1m_ = L_epaule2+L_dBeam+L_coude1cm;%m
+L_bTm_p_ = L_epaule2+L_dBeam+L_coude1Moteur;%m
+
+LA_ = L_cTm_p_+12*10^-3;%m
+
+m_epaule2 = 19*10^-3;%kg
+m_coude1 = 34*10^-3;%kg
+
+Fg_epaule2 = m_epaule2*g;
+Fg_coude1 = m_coude1*g;
+
+T_mass_epaule = L_epaule2cm_*Fg_epaule2 + L_Bbeam_*Fg_Beam + L_c1m_*Fg_coude1 + L_cTm_p_*Fg_moteurp + Fg_vis*(Lv1_+Lv2_+Lv3_+Lv4_) + Fg_vis_moteur*L_vis_moteur_ + Fg_shaft*Lshaft_;
+Tm_epaule = Tm_coude + sin(thetaA)*(LA_*(Fg_totale_coude+Fgc+Fg_pload)+T_mass_epaule)
+
+masse_totale_epaule = m_epaule2 + mBeam + m_coude1 + m_moteurp + m_vis*4 + m_vis_moteur + m_shaft;
+Fg_totale_epaule = masse_totale_epaule*g;
+
+%Distance des différents centre de masse par rapport au centre de masse "L_epaule2cm_"
+L_epaule2cm_R = L_epaule2cm_ - L_epaule2cm_;
+L_Bbeam_R = L_Bbeam_ - L_epaule2cm_;
+L_c1m_R = L_c1m_ - L_epaule2cm_;
+L_cTm_p_R = L_cTm_p_- L_epaule2cm_;
+Lv1_R = Lv1_ - L_epaule2cm_;
+Lv2_R = Lv2_ - L_epaule2cm_;
+Lv3_R = Lv3_ - L_epaule2cm_;
+Lv4_R = Lv4_ - L_epaule2cm_;
+Lshaft_R = Lshaft_ - L_epaule2cm_;
+L_vis_moteur_R = L_vis_moteur_ - L_epaule2cm_;
+
+cm_epaule = (m_epaule2*L_epaule2cm_R + mBeam*L_Bbeam_R + m_coude1*L_c1m_R + m_moteurp*L_cTm_p_R + m_vis*(Lv1_R + Lv2_R + Lv3_R + Lv4_R) + m_vis_moteur*L_vis_moteur_R + m_shaft*Lshaft_R)/(masse_totale_epaule);
+L_cm_epaule = cm_epaule + L_epaule2cm_;%À PARTIR DU CENTRE DES TROUES MOTEUR (OÙ LES MOTEURS APPLIQUE LEURS TORQUES EN GROS)
+Tm_epaule_CM = Tm_coude + sin(thetaA)*(LA_*(Fg_totale_coude+Fgc+Fg_pload)+(L_cm_epaule*Fg_totale_epaule))
+
 
 
