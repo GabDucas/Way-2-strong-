@@ -56,29 +56,25 @@ class RealTimePlot(QMainWindow):
 
 
         self.plot_widget = pg.PlotWidget()
-<<<<<<< Updated upstream
+
         self.plot_widget.setXRange(-12, 12)
         self.plot_widget.setYRange(-12,12)
-=======
-        self.plot_widget.setXRange(0, 5)
-        self.plot_widget.setYRange(0,8)
->>>>>>> Stashed changes
+
         self.layout.addWidget(self.plot_widget)
 
         self.plotGraph = self.plot_widget
         self.setCentralWidget(self.plotGraph)
+        self.curve = self.plotGraph
         self.pen = pg.mkPen(color=(255, 0, 127), width=15) #permet de donner un style au ligne de graphique
 
         self.data = deque(maxlen=1000)  # Liste de data contenant les angles
         self.x = 0
         self.y = 0
 
-<<<<<<< Updated upstream
-=======
+
         # Serial port initialization (change the port and baud rate accordingly)
        # self.serial_port = serial.Serial('COM12', 9600)
 
->>>>>>> Stashed changes
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update_plot)
         self.timer.start(200)  # Update plot every ___ milliseconds
@@ -87,8 +83,6 @@ class RealTimePlot(QMainWindow):
 
         self.plotGraph.clear()
         try:
-<<<<<<< Updated upstream
-
             #Permet de lire les angles de l'arduino et les placer dans un tableau
 
             #Longueur entre les points d'imu
@@ -113,24 +107,22 @@ class RealTimePlot(QMainWindow):
 
             with lock:
                 point3x = point2x + l3*np.cos(anglePoignet)
-                point3y = point2y + l3*np.cos(anglePoignet)
+                point3y = point2y + l3*np.sin(anglePoignet)
             point3 = (point3x, point3y)
             self.data.append(point3)
 
+
             self.plotGraph.plot([x for x, _ in self.data], [y for _, y in self.data], pen=self.pen)
             self.data.clear()
-=======
+
             """
             if self.serial_port.in_waiting > 0:
                 value = float(self.serial_port.readline().decode().strip())
             """
 
-            self.data.append((self.x, 4))
-            self.y += 1
-            self.x += 1
             #le problème est ici quand tu pognes
-            self.curve.setData([x for x, _ in self.data], [y for _, y in self.data])
->>>>>>> Stashed changes
+
+
 
 
         except Exception as e:
@@ -149,8 +141,8 @@ class Application(customtkinter.CTk):
         #Initialisation des différentes affaires de l'interface
        # self.labelTitre = customtkinter.CTkLabel(master=self, font=("Arial Black", 32), text="Info Exosquelette")
         self.labelMoteurPoignet = customtkinter.CTkLabel(master=self, font=("Arial", 16), text="Moteur Poignet")
-        self.labelMoteurCoude = customtkinter.CTkLabel(master=self, font=("Arial", 16), text="Moteur Coude")
-        self.labelMoteurEpaule = customtkinter.CTkLabel(master=self, font=("Arial", 16), text="Moteur Épaule")
+        #self.labelMoteurCoude = customtkinter.CTkLabel(master=self, font=("Arial", 16), text="Moteur Coude")
+        #self.labelMoteurEpaule = customtkinter.CTkLabel(master=self, font=("Arial", 16), text="Moteur Épaule")
 
         self.entreePoignet = customtkinter.CTkEntry(master=self)
         #self.entreeCoude = customtkinter.CTkEntry(master=self)
