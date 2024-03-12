@@ -6,7 +6,7 @@ double angle3;
 
 double increment;
 double nbValue;
-
+int tableau[7];
 String commande;
 
 void setup(){
@@ -19,6 +19,8 @@ void setup(){
   increment = 0.0;
   nbValue = 500;
   randomSeed(analogRead(A0));
+  for(int i =0; i<7;i++)
+    tableau[i] = i; 
 }
 
 void loop(){
@@ -36,6 +38,7 @@ void loop(){
   increment = randomInt * PI/(8*nbValue);
   angle3 = angle3 + increment;
 
+  /**
   Serial.print(angle);
   Serial.print(",");
 
@@ -43,13 +46,21 @@ void loop(){
   Serial.print(",");
 
   Serial.println(angle3);
+  **/
+  for  (int i = 0; i < 7; i++)
+  {
+    Serial.print(tableau[i]);
+    if(i!=6)
+      Serial.print(",");
+  }
+  Serial.println("");
 
   if(Serial.available())
     {
         commande = Serial.readStringUntil('\n');
         commande.trim();
         if(commande.equals("ON"))
-          angle2 = 10000000;
+          tableau[2] = 10000000;
     }
 
   delay(200);

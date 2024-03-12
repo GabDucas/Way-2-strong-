@@ -15,9 +15,15 @@ from collections import deque
 customtkinter.set_appearance_mode("dark")
 customtkinter.set_default_color_theme("dark-blue")
 
+temps = 0
+
 angleEpaule = 0
 angleCoude = 0
 anglePoignet = 0
+
+torqueEpaule = 0
+torqueCoude = 0
+torquePoignet = 0
 
 commandeMoteur = ""
 commandeAEnvoyer = False
@@ -26,7 +32,7 @@ lock = threading.Lock()
 
 class gestionPort():
     def __init__(self):
-        self.stringAngles = [0,0,0]
+        self.stringAngles = [0,0,0,0,0,0,0]
         self.serial_port = serial.Serial('COM12', 9600, timeout=1)
         self.serial_port.flush()
     def lireValeurs(self) -> []:
@@ -34,6 +40,7 @@ class gestionPort():
             self.stringAngles = self.serial_port.readline().decode('utf-8').strip().split(',')
 
         return self.stringAngles
+
     def envoieCommande(self):
         global commandeMoteur
         with lock:
@@ -71,10 +78,6 @@ class RealTimePlot(QMainWindow):
         self.x = 0
         self.y = 0
 
-
-        # Serial port initialization (change the port and baud rate accordingly)
-       # self.serial_port = serial.Serial('COM12', 9600)
-
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update_plot)
         self.timer.start(200)  # Update plot every ___ milliseconds
@@ -83,8 +86,6 @@ class RealTimePlot(QMainWindow):
 
         self.plotGraph.clear()
         try:
-            #Permet de lire les angles de l'arduino et les placer dans un tableau
-
             #Longueur entre les points d'imu
             l1 = 6
             l2 = 4
@@ -96,34 +97,24 @@ class RealTimePlot(QMainWindow):
             with lock:
                 point1x = l1*np.cos(angleEpaule)
                 point1y = l1*np.sin(angleEpaule)
-            point1 = (point1x, point1y)
+                point1 = (point1x, point1y)
             self.data.append(point1)
 
             with lock:
                 point2x = point1x + l2*np.cos(angleCoude)
                 point2y = point1y + l2*np.sin(angleCoude)
-            point2 = (point2x, point2y)
+                point2 = (point2x, point2y)
             self.data.append(point2)
 
             with lock:
                 point3x = point2x + l3*np.cos(anglePoignet)
                 point3y = point2y + l3*np.sin(anglePoignet)
-            point3 = (point3x, point3y)
+                point3 = (point3x, point3y)
             self.data.append(point3)
 
 
             self.plotGraph.plot([x for x, _ in self.data], [y for _, y in self.data], pen=self.pen)
             self.data.clear()
-
-            """
-            if self.serial_port.in_waiting > 0:
-                value = float(self.serial_port.readline().decode().strip())
-            """
-
-            #le problème est ici quand tu pognes
-
-
-
 
         except Exception as e:
             print(e)
@@ -148,7 +139,7 @@ class Application(customtkinter.CTk):
         #self.entreeCoude = customtkinter.CTkEntry(master=self)
         #self.entreeEpaule = customtkinter.CTkEntry(master=self)
 
-        self.boutonMoteur = customtkinter.CTkButton(master=self, text="Envoie commande poignet",
+        self.boutonMoteur = customtkinter.CTkButton(master=self, text="Envoie commande",
                                                      command=self.commandeBouton)
         #self.boutonCoude = customtkinter.CTkButton(master=self, text="Envoie commande coude",
         #                                           command=self.commandeBoutonCoude)
@@ -173,7 +164,9 @@ class Application(customtkinter.CTk):
         self.menu = customtkinter.CTkOptionMenu(master=self, values=["Poignet", "Coude", "Épaule", "Tous les moteurs"])
         self.menu.set("Choix moteur")
         self.menu.grid(row=2, column=0, padx=40, pady=40)
-        self.mainloop()
+
+        self.threadUpdate = threading.Thread(target=self.updateLabels)
+        self.threadUpdate.start()
 
         #Possibilité d'ajout d'un menu
 
@@ -186,6 +179,19 @@ class Application(customtkinter.CTk):
             commandeAEnvoyer = True
             #mettre des condition pour le get
             commandeMoteur = self.entreePoignet.get()
+            print(commandeMoteur)
+
+    def updateLabels(self):
+        global temps
+        global angleEpaule
+        global angleCoude
+        global anglePoignet
+        global torqueEpaule
+        global torqueCoude
+        global torquePoignet
+        while 1:
+            with lock:
+                self.boutonMoteur.configure(text=angleCoude)
 
 
 
@@ -197,35 +203,49 @@ def Graph():
     sys.exit(app.exec_())
 
 def gestionPortSerie():
+    global temps
     global angleCoude
     global angleEpaule
     global anglePoignet
+    global torqueCoude
+    global torqueEpaule
+    global torquePoignet
+
     global commandeAEnvoyer
 
     objet = gestionPort()
     while 1:
         with lock:
             stringAngle = objet.lireValeurs()
-            angleEpaule = float(stringAngle[0])
-            angleCoude = float(stringAngle[1])
-            anglePoignet = float(stringAngle[2])
-        print(stringAngle)
 
-        if(commandeAEnvoyer == True):
+            temps = float(stringAngle[0])
+            angleEpaule = float(stringAngle[1])
+            angleCoude = float(stringAngle[2])
+            anglePoignet = float(stringAngle[3])
+            torqueEpaule = float(stringAngle[4])
+            torqueCoude = float(stringAngle[5])
+            torquePoignet = float(stringAngle[6])
+
+        if (commandeAEnvoyer == True):
             objet.envoieCommande()
-            with lock:
-             commandeAEnvoyer = False
+            commandeAEnvoyer = False
 
         time.sleep(0.2)
+        print(stringAngle)
+
+
 
 if __name__ == "__main__":
 
     # threadLecture = threading.Thread(target=lirePortSerie)
     # threadLecture.start()
 
-    threadApp = threading.Thread(target=Application).start()
+    #threadApp = threading.Thread(target=Application).start()
+
     threadGraph = threading.Thread(target=Graph).start()
     threadLireAngle = threading.Thread(target=gestionPortSerie).start()
+    app = Application()
+    app.mainloop()
 
 
 
