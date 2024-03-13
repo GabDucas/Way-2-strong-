@@ -46,12 +46,9 @@ const int moteurPoignet_ID = 0; // TO DO : À définir
 const int moteurCoude_ID = 0;   // TO DO : À définir
 const int moteurEpaule_ID = 0;  // TO DO : À définir
 
-void taskEnvoieInterface( void *pvParameters);
+void taskCommICC( void *pvParameters);
+void taskCommInterface(void *pvParameters);
 void taskCalculTorque(void *pvParameters);
-void taskEnvoieCommande(void *pvParameters);
-void taskReceptionInterface(void *pvParameters);
-void taskReceptionOpenRB(void *pvParameters);
-
 
 void setup()
 {
@@ -72,7 +69,7 @@ void loop()
 // ***     TASKS     *** //
 ///////////////////////////
 
-void taskCommunicationSerieInterface( void *pvParameters)
+void taskCommInterface( void *pvParameters)
 {
   (void) pvParameters;
   for(;;)
@@ -100,8 +97,7 @@ void taskCalculTorque(void *pvParameters)
   const float io_gros = 0.142;
   const float kt_petit = 0.897;
   const float io_petit = 0.131;
-  const float io = ;       // TO DO : à définir
-  const float r_moteur = ; // TO DO : à définir
+  const float r_moteur = 1; // TO DO : à définir
 
   for( ;; )
   {
@@ -113,7 +109,7 @@ void taskCalculTorque(void *pvParameters)
 
       goalCourantPoignet = (torquePoignet + kt_petit*io_petit)/io_petit;
       goalCourantCoude = (torqueCoude + kt_petit*io_petit)/io_petit;
-      goalCourantEpaule = (torqueEpaule + kt_gros*io)/io_gros;
+      goalCourantEpaule = (torqueEpaule + kt_gros*io_gros)/io_gros;
 
       goalTensionPoignet = goalTensionPoignet/r_moteur;
       goalTensionCoude = goalCourantCoude/r_moteur;
