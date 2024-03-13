@@ -14,7 +14,21 @@
 #include <SoftwareSerial.h>
 #include <floatToString.h>
 
+struct joint
+{
+  float angle;
+  float torque;
+  float goalCourant;
+  float goalTension;
+  float commandeMoteur;
+};
 
+struct exoSquelette
+{
+  joint poignet;
+  joint coude;
+  joint epaule;
+};
 
 ///////////////////////////
 //   Variables globales  //
@@ -39,6 +53,8 @@ float commandeMoteurEpaule = 0;
 float commandeMoteurCoude = 0;
 float commandeMoteurPoignet = 0;
 
+exoSquelette exo;
+
 // Structures FreeRTOS
 SemaphoreHandle_t mutex_data = xSemaphoreCreateMutex();
 
@@ -54,22 +70,6 @@ const int moteurEpaule_ID = 0;  // TO DO : À définir
 void taskCommICC( void *pvParameters);
 void taskCommInterface(void *pvParameters);
 void taskCalculTorque(void *pvParameters);
-
-struct joint
-{
-  float angle;
-  float torque;
-  float goalCourant;
-  float goalTension;
-  float commandeMoteur;
-};
-
-struct exoSquelette
-{
-  joint poignet;
-  joint coude;
-  joint epaule;
-};
 
 
 void setup()
@@ -94,17 +94,7 @@ void loop()
 void taskCommInterface( void *pvParameters)
 {
   // Variables temporaires
-  float anglePoignet_temp;
-  float angleCoude_temp;
-  float angleEpaule_temp;
-
-  float torquePoignet_temp;
-  float torqueCoude_temp;
-  float torqueEpaule_temp;
-
-  float commandeMoteurPoignet_temp;
-  float commandeMoteurCoude_temp;
-  float commandeMoteurEpaule_temp;
+  exoSquelette exo_temp;
   
   int runmode_temp;
   String message;
@@ -115,25 +105,25 @@ void taskCommInterface( void *pvParameters)
     // Receive global variables
     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
     {
-      anglePoignet_temp = anglePoignet;
-      angleCoude_temp = angleCoude;
-      angleEpaule_temp = angleEpaule;
+      exo_temp.poignet.angle = anglePoignet;
+      exo_temp.coude.angle = angleCoude;
+      exo_temp.epaule.angle = angleEpaule;
 
-      torquePoignet_temp = torquePoignet;
-      torqueCoude_temp = torqueCoude;
-      torqueEpaule_temp = torqueEpaule;
+      exo_temp.poignet.torque = torquePoignet;
+      exo_temp.coude.torque = torqueCoude;
+      exo_temp.epaule.torque = torqueEpaule;
 
-      commandeMoteurPoignet_temp = commandeMoteurPoignet;
-      commandeMoteurCoude_temp = commandeMoteurCoude;
-      commandeMoteurEpaule_temp = commandeMoteurEpaule;
+      exo_temp.poignet.commandeMoteur = commandeMoteurPoignet;
+      exo_temp.coude.commandeMoteur = commandeMoteurCoude;
+      exo_temp.epaule.commandeMoteur = commandeMoteurEpaule;
 
       runmode_temp = runmode;
       xSemaphoreGive(mutex_data);
     }
     
     ////// Envoi à l'interface //////
-    Serial.println(millis() + "," + String(angleEpaule_temp) + "," + String(angleCoude_temp) + "," + String(anglePoignet_temp) + "," +
-                   String(torqueEpaule_temp) + "," + String(torqueCoude_temp) + "," + String(torquePoignet_temp));
+    Serial.println(millis() + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
+                   String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque));
 
 
     ////// Réception de l'interface //////
@@ -159,32 +149,32 @@ void taskCommInterface( void *pvParameters)
 
       if(message.charAt(2) == 1 && runmode_temp == 1)
       {
-        commandeMoteurPoignet_temp = message.substring(2, message.indexOf('\n')).toFloat();
+        exo_temp.poignet.commandeMoteur = message.substring(2, message.indexOf('\n')).toFloat();
       }
       else if(message.charAt(2) == 2 && runmode_temp == 1)
       {
-        commandeMoteurCoude_temp = message.substring(2, message.indexOf('\n')).toFloat();
+        exo_temp.coude.commandeMoteur = message.substring(2, message.indexOf('\n')).toFloat();
       }
       else if(message.charAt(2) == 3 && runmode_temp == 1)
       {
-        commandeMoteurEpaule_temp = message.substring(2, message.indexOf('\n')).toFloat();
+        exo_temp.epaule.commandeMoteur = message.substring(2, message.indexOf('\n')).toFloat();
       }
     }
       
     // Send global variables
     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
     {
-      anglePoignet = anglePoignet_temp;
-      angleCoude = angleCoude_temp;
-      angleEpaule = angleEpaule_temp;
+      anglePoignet = exo_temp.poignet.angle;
+      angleCoude = exo_temp.coude.angle;
+      angleEpaule = exo_temp.epaule.angle;
 
-      torquePoignet = torquePoignet_temp;
-      torqueCoude = torqueCoude_temp;
-      torqueEpaule = torqueEpaule_temp;
+      torquePoignet = exo_temp.poignet.torque;
+      torqueCoude = exo_temp.coude.torque;
+      torqueEpaule = exo_temp.epaule.torque;
 
-      commandeMoteurPoignet = commandeMoteurPoignet_temp;
-      commandeMoteurCoude = commandeMoteurCoude_temp;
-      commandeMoteurEpaule = commandeMoteurEpaule_temp;
+      commandeMoteurPoignet = exo_temp.poignet.commandeMoteur;
+      commandeMoteurCoude = exo_temp.coude.commandeMoteur;
+      commandeMoteurEpaule = exo_temp.epaule.commandeMoteur;
 
       runmode = runmode_temp;
       xSemaphoreGive(mutex_data);
@@ -198,18 +188,7 @@ void taskCalculTorque(void *pvParameters)
   (void) pvParameters;
 
   // Variables temporaires
-  float anglePoignet_temp;
-  float angleCoude_temp;
-  float angleEpaule_temp;
-
-  float torquePoignet_temp;
-  float torqueCoude_temp;
-  float torqueEpaule_temp;
-
-  float commandeMoteurPoignet_temp;
-  float commandeMoteurCoude_temp;
-  float commandeMoteurEpaule_temp;
-  
+  exoSquelette exo_temp;
   int runmode_temp;
 
   // Constantes physiques
@@ -229,17 +208,17 @@ void taskCalculTorque(void *pvParameters)
     // Receive global variables
     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
     {
-      anglePoignet_temp = anglePoignet;
-      angleCoude_temp = angleCoude;
-      angleEpaule_temp = angleEpaule;
+      exo_temp.poignet.angle = anglePoignet;
+      exo_temp.coude.angle = angleCoude;
+      exo_temp.epaule.angle = angleEpaule;
 
-      torquePoignet_temp = torquePoignet;
-      torqueCoude_temp = torqueCoude;
-      torqueEpaule_temp = torqueEpaule;
+      exo_temp.poignet.torque = torquePoignet;
+      exo_temp.coude.torque = torqueCoude;
+      exo_temp.epaule.torque = torqueEpaule;
 
-      commandeMoteurPoignet_temp = commandeMoteurPoignet;
-      commandeMoteurCoude_temp = commandeMoteurCoude;
-      commandeMoteurEpaule_temp = commandeMoteurEpaule;
+      exo_temp.poignet.commandeMoteur = commandeMoteurPoignet;
+      exo_temp.coude.commandeMoteur = commandeMoteurCoude;
+      exo_temp.epaule.commandeMoteur = commandeMoteurEpaule;
 
       runmode_temp = runmode;
       xSemaphoreGive(mutex_data);
@@ -249,9 +228,9 @@ void taskCalculTorque(void *pvParameters)
     {
       if(runmode_temp == 0) // E-stop
       {
-        commandeMoteurEpaule_temp = 0;
-        commandeMoteurCoude_temp = 0;
-        commandeMoteurPoignet_temp = 0;
+        exo_temp.epaule.commandeMoteur = 0;
+        exo_temp.coude.commandeMoteur = 0;
+        exo_temp.poignet.commandeMoteur = 0;
       }
       else if(runmode_temp == 1) // Interface gère les commandes
       {
@@ -284,17 +263,17 @@ void taskCalculTorque(void *pvParameters)
     // Send global variables
     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
     {
-      anglePoignet = anglePoignet_temp;
-      angleCoude = angleCoude_temp;
-      angleEpaule = angleEpaule_temp;
+      anglePoignet = exo_temp.poignet.angle;
+      angleCoude = exo_temp.coude.angle;
+      angleEpaule = exo_temp.epaule.angle;
 
-      torquePoignet = torquePoignet_temp;
-      torqueCoude = torqueCoude_temp;
-      torqueEpaule = torqueEpaule_temp;
+      torquePoignet = exo_temp.poignet.torque;
+      torqueCoude = exo_temp.coude.torque;
+      torqueEpaule = exo_temp.epaule.torque;
 
-      commandeMoteurPoignet = commandeMoteurPoignet_temp;
-      commandeMoteurCoude = commandeMoteurCoude_temp;
-      commandeMoteurEpaule = commandeMoteurEpaule_temp;
+      commandeMoteurPoignet = exo_temp.poignet.commandeMoteur;
+      commandeMoteurCoude = exo_temp.coude.commandeMoteur;
+      commandeMoteurEpaule = exo_temp.epaule.commandeMoteur;
 
       runmode = runmode_temp;
       xSemaphoreGive(mutex_data);
@@ -308,19 +287,9 @@ void taskCommICC(void *pvParameters)
   (void) pvParameters;
 
   // Variables temporaires
-  float anglePoignet_temp;
-  float angleCoude_temp;
-  float angleEpaule_temp;
 
-  float torquePoignet_temp;
-  float torqueCoude_temp;
-  float torqueEpaule_temp;
-
-  float commandeMoteurPoignet_temp;
-  float commandeMoteurCoude_temp;
-  float commandeMoteurEpaule_temp;
-  
   int runmode_temp;
+  exoSquelette exo_temp;
 
   float position1 = 0;
   float position2 = 0;
@@ -339,17 +308,6 @@ void taskCommICC(void *pvParameters)
     // Receive global variables
     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
     {
-      anglePoignet_temp = anglePoignet;
-      angleCoude_temp = angleCoude;
-      angleEpaule_temp = angleEpaule;
-
-      torquePoignet_temp = torquePoignet;
-      torqueCoude_temp = torqueCoude;
-      torqueEpaule_temp = torqueEpaule;
-
-      commandeMoteurPoignet_temp = commandeMoteurPoignet;
-      commandeMoteurCoude_temp = commandeMoteurCoude;
-      commandeMoteurEpaule_temp = commandeMoteurEpaule;
 
       runmode_temp = runmode;
       xSemaphoreGive(mutex_data);
@@ -421,17 +379,17 @@ void taskCommICC(void *pvParameters)
     // Send global variables
     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
     {
-      anglePoignet = anglePoignet_temp;
-      angleCoude = angleCoude_temp;
-      angleEpaule = angleEpaule_temp;
+      anglePoignet = exo_temp.poignet.angle;
+      angleCoude = exo_temp.coude.angle;
+      angleEpaule = exo_temp.epaule.angle;
 
-      torquePoignet = torquePoignet_temp;
-      torqueCoude = torqueCoude_temp;
-      torqueEpaule = torqueEpaule_temp;
+      torquePoignet = exo_temp.poignet.torque;
+      torqueCoude = exo_temp.coude.torque;
+      torqueEpaule = exo_temp.epaule.torque;
 
-      commandeMoteurPoignet = commandeMoteurPoignet_temp;
-      commandeMoteurCoude = commandeMoteurCoude_temp;
-      commandeMoteurEpaule = commandeMoteurEpaule_temp;
+      commandeMoteurPoignet = exo_temp.poignet.commandeMoteur;
+      commandeMoteurCoude = exo_temp.coude.commandeMoteur;
+      commandeMoteurEpaule = exo_temp.epaule.commandeMoteur;
 
       runmode = runmode_temp;
       xSemaphoreGive(mutex_data);
