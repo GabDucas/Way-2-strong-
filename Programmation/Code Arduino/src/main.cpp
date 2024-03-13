@@ -89,23 +89,34 @@ void taskCommInterface( void *pvParameters)
     if(Serial.available())
     {
       String message = Serial.readStringUntil('\n');
-      
-      if(message == "E-STOP")
+      //Défini le runmode en fonction du message envoyé par l'interface
+      if(message.charAt(0) == 0)
       {
-        runmode = false;
+        runmode = 0;
       }
-      //commande manuel
       else if(message.charAt(0) == 1)
       {
-        commandeMoteurEpaule = message.substring(2, message.indexOf('\n')).toFloat();
+        runmode = 1;
       }
-      else if(message.charAt(0) == 2)
+     else if(message.charAt(0) == 2)
+      {
+        runmode = 2;
+      }
+
+      //S'assure du mode manuel, et regarde le numéro du moteur à envoyer une commande 
+      //(message: 1,3,commande): mode manuel, moteur épaule, commande à envoyer à l'épaule
+
+      if(message.charAt(2) == 1 && runmode == 1)
+      {
+        commandeMoteurPoignet = message.substring(2, message.indexOf('\n')).toFloat();
+      }
+      else if(message.charAt(2) == 2 && runmode == 1)
       {
         commandeMoteurCoude = message.substring(2, message.indexOf('\n')).toFloat();
       }
-      else if(message.charAt(0) == 3)
+      else if(message.charAt(2) == 3 && runmode == 1)
       {
-        commandeMoteurPoignet = message.substring(2, message.indexOf('\n')).toFloat();
+        commandeMoteurEpaule = message.substring(2, message.indexOf('\n')).toFloat();
       }
     }
 
@@ -159,6 +170,10 @@ void taskCalculTorque(void *pvParameters)
         commandeMoteurCoude = goalTensionCoude;
         commandeMoteurPoignet = goalTensionPoignet;
       }
+      else if(runmode == 3)
+      {
+        //autre méthode de controle!
+      }
       xSemaphoreGive(mutex_data);
     }
   }
@@ -206,7 +221,7 @@ void taskCommICC(void *pvParameters)
     ///// Réception du openRB ///////
     
     // Parsing
-    Wire.requestFrom(openRB_ID, 42);
+    Wire.requestFrom(openRB_ID, 32);
     
     c = '0';
     currID = 1;
