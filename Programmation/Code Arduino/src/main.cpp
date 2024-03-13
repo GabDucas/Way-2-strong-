@@ -21,13 +21,13 @@
 ///////////////////////////
 
 // Données de calcul
-float anglePoignet;
-float angleCoude;
-float angleEpaule;
+float anglePoignet = 0;
+float angleCoude = 0;
+float angleEpaule = 0;
 
-float torquePoignet;
-float torqueCoude;
-float torqueEpaule;
+float torquePoignet = 0;
+float torqueCoude = 0;
+float torqueEpaule = 0;
 
 float goalCourantPoignet = 0;
 float goalCourantCoude = 0;
@@ -35,9 +35,9 @@ float goalCourantEpaule = 0;
 float goalTensionPoignet = 0;
 float goalTensionCoude = 0;
 
-float commandePoignet;
-float commandeCoude;
-float commandeEpaule;
+float commandeMoteurEpaule = 0;
+float commandeMoteurCoude = 0;
+float commandeMoteurPoignet = 0;
 
 // Structures FreeRTOS
 SemaphoreHandle_t mutex_data = xSemaphoreCreateMutex();
@@ -77,13 +77,34 @@ void taskCommInterface( void *pvParameters)
   (void) pvParameters;
   for(;;)
   {
-    Serial.println();
+    
+    Serial.println(millis() + "," + String(angleEpaule) + "," + String(angleCoude) + "," + String(anglePoignet) + "," +
+                   String(torqueEpaule) + "," + String(torqueCoude) + "," + String(torquePoignet));
+
     if(Serial.available())
     {
-      runmode = Serial.readStringUntil('\n');
+      String message = Serial.readStringUntil('\n');
+      
+      if(message == "E-STOP")
+      {
+        runmode = false;
+      }
+      else if(message.charAt(0) == 1)
+      {
+        //commande manuel
+        commandeMoteurEpaule = message.substring(2, message.indexOf('\n')).toFloat();
+      }
+      else if(message.charAt(0) == 2)
+      {
+        commandeMoteurCoude = message.substring(2, message.indexOf('\n')).toFloat();
+      }
+      else if(message.charAt(0) == 3)
+      {
+        commandeMoteurPoignet = message.substring(2, message.indexOf('\n')).toFloat();
+      }
     }
 
-    Serial.println("");
+    vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
 
@@ -114,12 +135,12 @@ void taskCalculTorque(void *pvParameters)
       goalCourantCoude = (torqueCoude + kt_petit*io_petit)/io_petit;
       goalCourantEpaule = (torqueEpaule + kt_gros*io_gros)/io_gros;
 
-      goalTensionPoignet = goalTensionPoignet/r_moteur;
+      goalTensionPoignet = goalCourantPoignet/r_moteur;
       goalTensionCoude = goalCourantCoude/r_moteur;
 
-      commandePoignet = goalTensionPoignet;
-      commandeCoude = goalTensionCoude;
-      commandeEpaule = goalCourantEpaule;
+      commandeMoteurEpaule = goalCourantEpaule;
+      commandeMoteurCoude = goalTensionCoude;
+      commandeMoteurPoignet = goalTensionPoignet;
 
       xSemaphoreGive(mutex_data);
     }
