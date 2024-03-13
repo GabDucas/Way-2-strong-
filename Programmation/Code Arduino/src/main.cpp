@@ -12,6 +12,7 @@
 #include <event_groups.h>
 #include <semphr.h>
 #include <SoftwareSerial.h>
+#include <floatToString.h>
 
 
 
@@ -31,10 +32,12 @@ float torqueEpaule;
 float goalCourantPoignet = 0;
 float goalCourantCoude = 0;
 float goalCourantEpaule = 0;
-
 float goalTensionPoignet = 0;
 float goalTensionCoude = 0;
 
+float commandePoignet;
+float commandeCoude;
+float commandeEpaule;
 
 // Structures FreeRTOS
 SemaphoreHandle_t mutex_data = xSemaphoreCreateMutex();
@@ -114,6 +117,10 @@ void taskCalculTorque(void *pvParameters)
       goalTensionPoignet = goalTensionPoignet/r_moteur;
       goalTensionCoude = goalCourantCoude/r_moteur;
 
+      commandePoignet = goalTensionPoignet;
+      commandeCoude = goalTensionCoude;
+      commandeEpaule = goalCourantEpaule;
+
       xSemaphoreGive(mutex_data);
     }
   }
@@ -127,15 +134,31 @@ void taskCommICC(void *pvParameters)
   float position2 = 0;
   float position3 = 0;
 
+  String stringBuffer;
+  const int lengthBuffer = 10;
+  char charBuffer[lengthBuffer];
+
   for( ;; )
   {
 
-
     //////transmettre//////
-    //mettre le nombre de bit à lire comme du monde
-    Wire.beginTransmission(openRB_ID); // transmit to device #10 (OpenRB)
-    Wire.write("1, commandeÉpaule, commandeCoude, commandePoignet");
-    Wire.endTransmission();    // stop transmitting
+
+    Wire.beginTransmission(openRB_ID);
+    
+    //Transmission poignet
+    stringBuffer = String(moteurPoignet_ID) + "," + String(commandePoignet);
+    stringBuffer.toCharArray(charBuffer, lengthBuffer); 
+    Wire.write(charBuffer);
+    //Transmission coude
+    stringBuffer = String(moteurCoude_ID) + "," + String(commandeCoude);
+    stringBuffer.toCharArray(charBuffer, lengthBuffer); 
+    Wire.write(charBuffer);
+    //Transmission epaule
+    stringBuffer = String(moteurEpaule_ID) + "," + String(commandeEpaule);
+    stringBuffer.toCharArray(charBuffer, lengthBuffer); 
+    Wire.write(charBuffer);
+    
+    Wire.endTransmission();
 
     /////LIRE LES AFFAIRES ///////
     Wire.requestFrom(openRB_ID, 42);
