@@ -122,8 +122,14 @@ void taskCalculTorque(void *pvParameters)
 void taskCommICC(void *pvParameters)
 {
   (void) pvParameters;
+
+  float position1 = 0;
+  float position2 = 0;
+  float position3 = 0;
+
   for( ;; )
   {
+
 
     //////transmettre//////
     //mettre le nombre de bit à lire comme du monde
@@ -135,7 +141,7 @@ void taskCommICC(void *pvParameters)
     Wire.requestFrom(openRB_ID, 42);
     
     char c = '0';
-    bool currID = 0;
+    int currID = 1;
 
     while (0 < Wire.available()) 
     { // loop through all char
@@ -144,21 +150,17 @@ void taskCommICC(void *pvParameters)
       {
         currID += 1;
       }
-      if (currID == 0)
+      else if (currID == 1)
       {
-        cntrlMode = c;
+        position1 = position1 * 10 + (c - '0');
       }
-      if (currID == 1)
+      else if (currID == 2)
       {
-        data1 = data1 * 10 + (c - '0');
+        position2 = position2 * 10 + (c - '0');
       }
-      if (currID == 2)
+      else if (currID == 3)
       {
-        data2 = data2 * 10 + (c - '0');
-      }
-      if (currID == 3)
-      {
-        data3 = data3 * 10 + (c - '0');
+        position3 = position3 * 10 + (c - '0');
       }
     }
   }
