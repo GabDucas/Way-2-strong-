@@ -1,21 +1,36 @@
 // Arduino MEGA projet S4
+// Équipe 6 - GRO68 H24
 
+
+
+///////////////////////////
+// ***    Headers    *** //
+///////////////////////////
 #include <Arduino.h>
 #include <Arduino_FreeRTOS.h>
 #include <Wire.h>
-
-/******* *************** *********/
-/******* headers ajoutés *********/
-/******* *************** *********/
 #include <event_groups.h>
 #include <semphr.h>
 // #include <SoftwareSerial.h>
 
-/******* *************** *********/
-/***** Variables globales ********/
-/******* *************** *********/
 
-//float tableauData[7];
+
+///////////////////////////
+//   Variables globales  //
+///////////////////////////
+
+// Constantes
+const float cstPoignet = 0.08193312;
+const float cstCoude = 0.4133795679;
+const float cstEpaule = 0.5955808941;
+
+const float kt_gros = 1.8;
+const float io_gros = 0.142;
+const float kt_petit = 0.897;
+const float io_petit = 0.131;
+const float r_moteur = ; // TO DO : à définir
+
+// Données de calcul
 float anglePoignet;
 float angleCoude;
 float angleEpaule;
@@ -23,14 +38,14 @@ float angleEpaule;
 float torquePoignet;
 float torqueCoude;
 float torqueEpaule;
+//float tableauData[7];
 
 
-
-
+// Structures FreeRTOS
 EventGroupHandle_t flags;
-
-//c'était dans le template
-void taskExemple( void *pvParameters );
+bool runmode = true; // E-stop
+SemaphoreHandle_t mutex_data = xSemaphoreCreateMutex();
+int openRB_ID = 0; // TO DO : À définir
 
 void taskEnvoieInterface( void *pvParameters);
 void taskCalculTorque(void *pvParameters);
@@ -38,25 +53,17 @@ void taskEnvoieCommande(void *pvParameters);
 void taskReceptionInterface(void *pvParameters);
 void taskReceptionOpenRB(void *pvParameters);
 
-void ISR_test();
 
 void setup()
 {
+  Serial.begin(9600);
+  Wire.begin();
 
-    Serial.begin(9600);
-    Wire.begin();
-    //attachInterrupt(digitalPinToInterrupt(PIN_ISR), ISR_test, CHANGE);
-
-    xTaskCreate(taskExemple,"Test",   128,NULL,1,NULL);
-
-    xTaskCreate(taskEnvoieInterface,"inter",   128,NULL,1,NULL);
-    xTaskCreate(taskCalculTorque,"calcul",   128,NULL,1,NULL);
-    xTaskCreate(taskEnvoieCommande,"commande",   128,NULL,1,NULL);
-    xTaskCreate(taskReceptionInterface,"reception inter",   128,NULL,1,NULL);
-    xTaskCreate(taskReceptionOpenRB,"reception openrb",   128,NULL,1,NULL);
-
-    
-    Serial.println("Synth prototype ready");
+  xTaskCreate(taskEnvoieInterface,   "inter",           128,NULL,1,NULL);
+  xTaskCreate(taskCalculTorque,      "calcul",          128,NULL,1,NULL);
+  xTaskCreate(taskEnvoieCommande,    "commande",        128,NULL,1,NULL);
+  xTaskCreate(taskReceptionInterface,"reception inter", 128,NULL,1,NULL);
+  xTaskCreate(taskReceptionOpenRB,   "reception openrb",128,NULL,1,NULL);    
 }
 
 void loop()
@@ -99,42 +106,54 @@ void taskEnvoieInterface( void *pvParameters)
 void taskCalculTorque(void *pvParameters)
 {
   (void) pvParameters;
-  float cstPoignet = 0.08193312;
-  float cstCoude = 0.4133795679;
-  float cstEpaule = 0.5955808941;
 
-  kt_gros = 1.8;
-  io_gros = 0.142;
-  kt_petit = 0.897;
-  io_petit = 0.131;
+  float goalCourantPoignet = 0;
+  float goalCourantCoude = 0;
+  float goalCourantEpaule = 0;
+  float goalTensionPoignet = 0;
+  float goalTensionCoude = 0;
 
-  torquePoignet = sin(anglePoignet) * cstPoignet;
-  torqueCoude = torquePoignet + sin(angleCoude) * cstCoude;
-  torqueEpaule = torqueCoude + sin(angleEpaule) * cstEpaule;
+  for( ;; )
+  {
 
+    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+    {
+      torquePoignet = sin(anglePoignet) * cstPoignet;
+      torqueCoude = torquePoignet + sin(angleCoude) * cstCoude;
+      torqueEpaule = torqueCoude + sin(angleEpaule) * cstEpaule;
 
-  goalCourantPoignet = (torquePoignet + kt_petit*io_petit)/io_petit;
-  goalCourantCoude = (torqueCoude + kt_petit*io_petit)/io_petit;
-  goalCourantEpaule = (torqueEpaule + kt_gros*io)/io_gros;
+      goalCourantPoignet = (torquePoignet + kt_petit*io_petit)/io_petit;
+      goalCourantCoude = (torqueCoude + kt_petit*io_petit)/io_petit;
+      goalCourantEpaule = (torqueEpaule + kt_gros*io)/io_gros;
 
-  goalTensionPoignet = goalTensionPoignet/r_moteur;
-  goalTensionCoude = goalCourantCoude/r_moteur;
+      goalTensionPoignet = goalTensionPoignet/r_moteur;
+      goalTensionCoude = goalCourantCoude/r_moteur;
+
+      xSemaphoreGive(mutex_data);
+    }
+  }
 }
 
 void taskEnvoieCommande(void *pvParameters)
 {
   (void) pvParameters;
-  Wire.beginTransmission(10); // transmit to device #10 (OpenRB)
-  Wire.write("num moteur, commandeÉpaule, commandeCoude, commandePoignet");
-  Wire.endTransmission();    // stop transmitting
+  for( ;; )
+  {
+    Wire.beginTransmission(openRB_ID); // transmit to device #10 (OpenRB)
+    Wire.write("num moteur, commandeÉpaule, commandeCoude, commandePoignet");
+    Wire.endTransmission();    // stop transmitting
+  }
 }
 
 void taskReceptionInterface(void *pvParameters)
 {
   (void) pvParameters;
-  if(Serial.available())
+  for( ;; )
   {
-    valeurCommande = Serial.readStringUntil('\n');
+    if(Serial.available())
+    {
+      rundmode = Serial.readStringUntil('\n');
+    }
   }
 }
 
@@ -150,16 +169,4 @@ void taskReceptionOpenRB(void *pvParameters)
   tableauData[5] = 
   tableauData[6] = 
   */
-}
-
-///////////////////////////
-// ***      ISR      *** //
-///////////////////////////
- 
-void ISR_test()
-/*
-  ISR test
-*/ 
-{
-    
 }
