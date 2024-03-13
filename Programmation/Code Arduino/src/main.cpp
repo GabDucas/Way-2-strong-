@@ -55,6 +55,23 @@ void taskCommICC( void *pvParameters);
 void taskCommInterface(void *pvParameters);
 void taskCalculTorque(void *pvParameters);
 
+struct joint
+{
+  float angle;
+  float torque;
+  float goalCourant;
+  float goalTension;
+  float commandeMoteur;
+};
+
+struct exoSquelette
+{
+  joint poignet;
+  joint coude;
+  joint epaule;
+};
+
+
 void setup()
 {
   Serial.begin(9600);
