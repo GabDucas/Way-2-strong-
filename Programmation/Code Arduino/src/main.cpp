@@ -42,7 +42,9 @@ float commandeMoteurPoignet = 0;
 // Structures FreeRTOS
 SemaphoreHandle_t mutex_data = xSemaphoreCreateMutex();
 
-bool runmode = true; // E-stop
+int runmode = 0; // = 0 : E-stop
+                 // = 1 : contrôle manuel de l'interface
+                 // = 2 : contrôle automatique anti-gravité
 
 const int openRB_ID = 0;        // TO DO : À définir
 const int moteurPoignet_ID = 0; // TO DO : À définir
@@ -78,9 +80,12 @@ void taskCommInterface( void *pvParameters)
   for(;;)
   {
     
+    ////// Envoi à l'interface //////
     Serial.println(millis() + "," + String(angleEpaule) + "," + String(angleCoude) + "," + String(anglePoignet) + "," +
                    String(torqueEpaule) + "," + String(torqueCoude) + "," + String(torquePoignet));
 
+
+    ////// Réception de l'interface //////
     if(Serial.available())
     {
       String message = Serial.readStringUntil('\n');
@@ -89,9 +94,9 @@ void taskCommInterface( void *pvParameters)
       {
         runmode = false;
       }
+      //commande manuel
       else if(message.charAt(0) == 1)
       {
-        //commande manuel
         commandeMoteurEpaule = message.substring(2, message.indexOf('\n')).toFloat();
       }
       else if(message.charAt(0) == 2)
@@ -159,21 +164,25 @@ void taskCommICC(void *pvParameters)
   const int lengthBuffer = 10;
   char charBuffer[lengthBuffer];
 
+  char c = '0';
+  int currID = 1;
+
   for( ;; )
   {
 
-    //////transmettre//////
-
+    ////// Envoi au openRB //////
     Wire.beginTransmission(openRB_ID);
     
     //Transmission poignet
     stringBuffer = String(moteurPoignet_ID) + "," + String(commandeMoteurPoignet);
     stringBuffer.toCharArray(charBuffer, lengthBuffer); 
     Wire.write(charBuffer);
+
     //Transmission coude
     stringBuffer = String(moteurCoude_ID) + "," + String(commandeMoteurCoude);
     stringBuffer.toCharArray(charBuffer, lengthBuffer); 
     Wire.write(charBuffer);
+
     //Transmission epaule
     stringBuffer = String(moteurEpaule_ID) + "," + String(commandeMoteurEpaule);
     stringBuffer.toCharArray(charBuffer, lengthBuffer); 
@@ -181,11 +190,14 @@ void taskCommICC(void *pvParameters)
     
     Wire.endTransmission();
 
-    /////LIRE LES AFFAIRES ///////
+
+    ///// Réception du openRB ///////
+    
+    // Parsing
     Wire.requestFrom(openRB_ID, 42);
     
-    char c = '0';
-    int currID = 1;
+    c = '0';
+    currID = 1;
 
     while (0 < Wire.available()) 
     { // loop through all char
@@ -207,6 +219,19 @@ void taskCommICC(void *pvParameters)
         position3 = position3 * 10 + (c - '0');
       }
     }
+
+    // Conversion
+    // mapper valeur encodeur sur 0 à 360 degrés
+    // vérifier si ajout offset est nécesssaire
+
+    // Storing dans var globales
+    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+    {
+      anglePoignet = position1; // TO DO : vérifier si position1 va avec anglePoignet
+      angleCoude = position2;
+      angleEpaule = position3;
+      xSemaphoreGive(mutex_data);
+    } 
   }
 }
 
