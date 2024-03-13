@@ -96,13 +96,7 @@ void taskCommunicationSerieInterface( void *pvParameters)
   (void) pvParameters;
   for(;;)
   {
-    for(int i = 0; i < 7; i++)
-    {
-      Serial.print(tableauData[i]);
-      if(i!=6)
-        Serial.print(",");
-    }
-
+    Serial.println()
      if(Serial.available())
     {
       rundmode = Serial.readStringUntil('\n');
@@ -148,16 +142,50 @@ void taskCommunicationICC(void *pvParameters)
   (void) pvParameters;
   for( ;; )
   {
+
+    //////transmettre//////
     //mettre le nombre de bit à lire comme du monde
-    Wire.requestFrom(openRB_ID, 8);
     Wire.beginTransmission(openRB_ID); // transmit to device #10 (OpenRB)
-    Wire.write("num moteur, commandeÉpaule, commandeCoude, commandePoignet");
+    Wire.write("1, commandeÉpaule, commandeCoude, commandePoignet");
     Wire.endTransmission();    // stop transmitting
 
+    /////LIRE LES AFFAIRES ///////
+    Wire.requestFrom(openRB_ID, 42);
+    
+    char c = '0';
+    bool currID = 0;
 
+    while (0 < Wire.available()) 
+    { // loop through all char
+      c = Wire.read(); // receive byte as a character
+      if (c == ',') // check for motor ID and torque separator  // (c >= '0' && c <= '9')
+      {
+        currID += 1;
+      }
+      if (currID == 0)
+      {
+        cntrlMode = c;
+      }
+      if (currID == 1)
+      {
+        data1 = data1 * 10 + (c - '0');
+      }
+      if (currID == 2)
+      {
+        data2 = data2 * 10 + (c - '0');
+      }
+      if (currID == 3)
+      {
+        data3 = data3 * 10 + (c - '0');
+      }
+    }
   }
-
-
 }
+
+
+  
+
+
+
 
 
