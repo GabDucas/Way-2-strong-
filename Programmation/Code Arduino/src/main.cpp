@@ -74,10 +74,10 @@ void taskCommInterface( void *pvParameters)
   (void) pvParameters;
   for(;;)
   {
-    Serial.println()
-     if(Serial.available())
+    Serial.println();
+    if(Serial.available())
     {
-      rundmode = Serial.readStringUntil('\n');
+      runmode = Serial.readStringUntil('\n');
     }
 
     Serial.println("");
