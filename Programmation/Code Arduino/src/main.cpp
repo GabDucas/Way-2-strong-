@@ -93,50 +93,102 @@ void loop()
 
 void taskCommInterface( void *pvParameters)
 {
+  // Variables temporaires
+  float anglePoignet_temp;
+  float angleCoude_temp;
+  float angleEpaule_temp;
+
+  float torquePoignet_temp;
+  float torqueCoude_temp;
+  float torqueEpaule_temp;
+
+  float commandeMoteurPoignet_temp;
+  float commandeMoteurCoude_temp;
+  float commandeMoteurEpaule_temp;
+  
+  int runmode_temp;
+  String message;
+
   (void) pvParameters;
   for(;;)
   {
+    // Receive global variables
+    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+    {
+      anglePoignet_temp = anglePoignet;
+      angleCoude_temp = angleCoude;
+      angleEpaule_temp = angleEpaule;
+
+      torquePoignet_temp = torquePoignet;
+      torqueCoude_temp = torqueCoude;
+      torqueEpaule_temp = torqueEpaule;
+
+      commandeMoteurPoignet_temp = commandeMoteurPoignet;
+      commandeMoteurCoude_temp = commandeMoteurCoude;
+      commandeMoteurEpaule_temp = commandeMoteurEpaule;
+
+      runmode_temp = runmode;
+      xSemaphoreGive(mutex_data);
+    }
     
     ////// Envoi à l'interface //////
-    Serial.println(millis() + "," + String(angleEpaule) + "," + String(angleCoude) + "," + String(anglePoignet) + "," +
-                   String(torqueEpaule) + "," + String(torqueCoude) + "," + String(torquePoignet));
+    Serial.println(millis() + "," + String(angleEpaule_temp) + "," + String(angleCoude_temp) + "," + String(anglePoignet_temp) + "," +
+                   String(torqueEpaule_temp) + "," + String(torqueCoude_temp) + "," + String(torquePoignet_temp));
 
 
     ////// Réception de l'interface //////
     if(Serial.available())
     {
-      String message = Serial.readStringUntil('\n');
+      message = Serial.readStringUntil('\n');
       //Défini le runmode en fonction du message envoyé par l'interface
       if(message.charAt(0) == 0)
       {
-        runmode = 0;
+        runmode_temp = 0;
       }
       else if(message.charAt(0) == 1)
       {
-        runmode = 1;
+        runmode_temp = 1;
       }
      else if(message.charAt(0) == 2)
       {
-        runmode = 2;
+        runmode_temp = 2;
       }
 
       //S'assure du mode manuel, et regarde le numéro du moteur à envoyer une commande 
       //(message: 1,3,commande): mode manuel, moteur épaule, commande à envoyer à l'épaule
 
-      if(message.charAt(2) == 1 && runmode == 1)
+      if(message.charAt(2) == 1 && runmode_temp == 1)
       {
-        commandeMoteurPoignet = message.substring(2, message.indexOf('\n')).toFloat();
+        commandeMoteurPoignet_temp = message.substring(2, message.indexOf('\n')).toFloat();
       }
-      else if(message.charAt(2) == 2 && runmode == 1)
+      else if(message.charAt(2) == 2 && runmode_temp == 1)
       {
-        commandeMoteurCoude = message.substring(2, message.indexOf('\n')).toFloat();
+        commandeMoteurCoude_temp = message.substring(2, message.indexOf('\n')).toFloat();
       }
-      else if(message.charAt(2) == 3 && runmode == 1)
+      else if(message.charAt(2) == 3 && runmode_temp == 1)
       {
-        commandeMoteurEpaule = message.substring(2, message.indexOf('\n')).toFloat();
+        commandeMoteurEpaule_temp = message.substring(2, message.indexOf('\n')).toFloat();
       }
     }
+      
+    // Send global variables
+    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+    {
+      anglePoignet = anglePoignet_temp;
+      angleCoude = angleCoude_temp;
+      angleEpaule = angleEpaule_temp;
 
+      torquePoignet = torquePoignet_temp;
+      torqueCoude = torqueCoude_temp;
+      torqueEpaule = torqueEpaule_temp;
+
+      commandeMoteurPoignet = commandeMoteurPoignet_temp;
+      commandeMoteurCoude = commandeMoteurCoude_temp;
+      commandeMoteurEpaule = commandeMoteurEpaule_temp;
+
+      runmode = runmode_temp;
+      xSemaphoreGive(mutex_data);
+    }
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
@@ -144,6 +196,21 @@ void taskCommInterface( void *pvParameters)
 void taskCalculTorque(void *pvParameters)
 {
   (void) pvParameters;
+
+  // Variables temporaires
+  float anglePoignet_temp;
+  float angleCoude_temp;
+  float angleEpaule_temp;
+
+  float torquePoignet_temp;
+  float torqueCoude_temp;
+  float torqueEpaule_temp;
+
+  float commandeMoteurPoignet_temp;
+  float commandeMoteurCoude_temp;
+  float commandeMoteurEpaule_temp;
+  
+  int runmode_temp;
 
   // Constantes physiques
   const float cstPoignet = 0.08193312;
@@ -158,19 +225,39 @@ void taskCalculTorque(void *pvParameters)
 
   for( ;; )
   {
+    
+    // Receive global variables
     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
     {
-      if(runmode == 0) // E-stop
+      anglePoignet_temp = anglePoignet;
+      angleCoude_temp = angleCoude;
+      angleEpaule_temp = angleEpaule;
+
+      torquePoignet_temp = torquePoignet;
+      torqueCoude_temp = torqueCoude;
+      torqueEpaule_temp = torqueEpaule;
+
+      commandeMoteurPoignet_temp = commandeMoteurPoignet;
+      commandeMoteurCoude_temp = commandeMoteurCoude;
+      commandeMoteurEpaule_temp = commandeMoteurEpaule;
+
+      runmode_temp = runmode;
+      xSemaphoreGive(mutex_data);
+    }
+    
+    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+    {
+      if(runmode_temp == 0) // E-stop
       {
-        commandeMoteurEpaule = 0;
-        commandeMoteurCoude = 0;
-        commandeMoteurPoignet = 0;
+        commandeMoteurEpaule_temp = 0;
+        commandeMoteurCoude_temp = 0;
+        commandeMoteurPoignet_temp = 0;
       }
-      else if(runmode == 1) // Interface gère les commandes
+      else if(runmode_temp == 1) // Interface gère les commandes
       {
         // do nothing
       }
-      else if(runmode == 2) // Mode anti-gravité
+      else if(runmode_temp == 2) // Mode anti-gravité
       {
         torquePoignet = sin(anglePoignet) * cstPoignet;
         torqueCoude = torquePoignet + sin(angleCoude) * cstCoude;
@@ -187,18 +274,53 @@ void taskCalculTorque(void *pvParameters)
         commandeMoteurCoude = goalTensionCoude;
         commandeMoteurPoignet = goalTensionPoignet;
       }
-      else if(runmode == 3)
+      else if(runmode_temp == 3)
       {
         //autre méthode de controle!
       }
       xSemaphoreGive(mutex_data);
     }
+  
+    // Send global variables
+    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+    {
+      anglePoignet = anglePoignet_temp;
+      angleCoude = angleCoude_temp;
+      angleEpaule = angleEpaule_temp;
+
+      torquePoignet = torquePoignet_temp;
+      torqueCoude = torqueCoude_temp;
+      torqueEpaule = torqueEpaule_temp;
+
+      commandeMoteurPoignet = commandeMoteurPoignet_temp;
+      commandeMoteurCoude = commandeMoteurCoude_temp;
+      commandeMoteurEpaule = commandeMoteurEpaule_temp;
+
+      runmode = runmode_temp;
+      xSemaphoreGive(mutex_data);
+    }
+  
   }
 }
 
 void taskCommICC(void *pvParameters)
 {
   (void) pvParameters;
+
+  // Variables temporaires
+  float anglePoignet_temp;
+  float angleCoude_temp;
+  float angleEpaule_temp;
+
+  float torquePoignet_temp;
+  float torqueCoude_temp;
+  float torqueEpaule_temp;
+
+  float commandeMoteurPoignet_temp;
+  float commandeMoteurCoude_temp;
+  float commandeMoteurEpaule_temp;
+  
+  int runmode_temp;
 
   float position1 = 0;
   float position2 = 0;
@@ -214,6 +336,26 @@ void taskCommICC(void *pvParameters)
   for( ;; )
   {
 
+    // Receive global variables
+    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+    {
+      anglePoignet_temp = anglePoignet;
+      angleCoude_temp = angleCoude;
+      angleEpaule_temp = angleEpaule;
+
+      torquePoignet_temp = torquePoignet;
+      torqueCoude_temp = torqueCoude;
+      torqueEpaule_temp = torqueEpaule;
+
+      commandeMoteurPoignet_temp = commandeMoteurPoignet;
+      commandeMoteurCoude_temp = commandeMoteurCoude;
+      commandeMoteurEpaule_temp = commandeMoteurEpaule;
+
+      runmode_temp = runmode;
+      xSemaphoreGive(mutex_data);
+    }
+    
+    
     ////// Envoi au openRB //////
     Wire.beginTransmission(openRB_ID);
     
@@ -275,14 +417,24 @@ void taskCommICC(void *pvParameters)
       angleCoude = position2;
       angleEpaule = position3;
       xSemaphoreGive(mutex_data);
+    }
+    // Send global variables
+    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+    {
+      anglePoignet = anglePoignet_temp;
+      angleCoude = angleCoude_temp;
+      angleEpaule = angleEpaule_temp;
+
+      torquePoignet = torquePoignet_temp;
+      torqueCoude = torqueCoude_temp;
+      torqueEpaule = torqueEpaule_temp;
+
+      commandeMoteurPoignet = commandeMoteurPoignet_temp;
+      commandeMoteurCoude = commandeMoteurCoude_temp;
+      commandeMoteurEpaule = commandeMoteurEpaule_temp;
+
+      runmode = runmode_temp;
+      xSemaphoreGive(mutex_data);
     } 
   }
 }
-
-
-  
-
-
-
-
-
