@@ -91,16 +91,25 @@ void taskExemple( void * pvParameters )
      }
  }
 
-void taskEnvoieInterface( void *pvParameters)
+void taskCommunicationSerieInterface( void *pvParameters)
 {
   (void) pvParameters;
-  for(int i = 0; i < 7; i++)
+  for(;;)
   {
-    Serial.print(tableauData[i]);
-    if(i!=6)
-      Serial.print(",");
+    for(int i = 0; i < 7; i++)
+    {
+      Serial.print(tableauData[i]);
+      if(i!=6)
+        Serial.print(",");
+    }
+
+     if(Serial.available())
+    {
+      rundmode = Serial.readStringUntil('\n');
+    }
+
+    Serial.println("");
   }
-  Serial.println("");
 }
 
 void taskCalculTorque(void *pvParameters)
@@ -134,39 +143,21 @@ void taskCalculTorque(void *pvParameters)
   }
 }
 
-void taskEnvoieCommande(void *pvParameters)
+void taskCommunicationICC(void *pvParameters)
 {
   (void) pvParameters;
   for( ;; )
   {
+    //mettre le nombre de bit à lire comme du monde
+    Wire.requestFrom(openRB_ID, 8);
     Wire.beginTransmission(openRB_ID); // transmit to device #10 (OpenRB)
     Wire.write("num moteur, commandeÉpaule, commandeCoude, commandePoignet");
     Wire.endTransmission();    // stop transmitting
+
+
   }
+
+
 }
 
-void taskReceptionInterface(void *pvParameters)
-{
-  (void) pvParameters;
-  for( ;; )
-  {
-    if(Serial.available())
-    {
-      rundmode = Serial.readStringUntil('\n');
-    }
-  }
-}
 
-void taskReceptionOpenRB(void *pvParameters)
-{
-  (void) pvParameters;
-  /*
-  tableauData[0] = READOPENRB
-  tableauData[1] = 
-  tableauData[2] = 
-  tableauData[3] = 
-  tableauData[4] = 
-  tableauData[5] = 
-  tableauData[6] = 
-  */
-}
