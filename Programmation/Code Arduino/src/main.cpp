@@ -167,15 +167,15 @@ void taskCommICC(void *pvParameters)
     Wire.beginTransmission(openRB_ID);
     
     //Transmission poignet
-    stringBuffer = String(moteurPoignet_ID) + "," + String(commandePoignet);
+    stringBuffer = String(moteurPoignet_ID) + "," + String(commandeMoteurPoignet);
     stringBuffer.toCharArray(charBuffer, lengthBuffer); 
     Wire.write(charBuffer);
     //Transmission coude
-    stringBuffer = String(moteurCoude_ID) + "," + String(commandeCoude);
+    stringBuffer = String(moteurCoude_ID) + "," + String(commandeMoteurCoude);
     stringBuffer.toCharArray(charBuffer, lengthBuffer); 
     Wire.write(charBuffer);
     //Transmission epaule
-    stringBuffer = String(moteurEpaule_ID) + "," + String(commandeEpaule);
+    stringBuffer = String(moteurEpaule_ID) + "," + String(commandeMoteurEpaule);
     stringBuffer.toCharArray(charBuffer, lengthBuffer); 
     Wire.write(charBuffer);
     
