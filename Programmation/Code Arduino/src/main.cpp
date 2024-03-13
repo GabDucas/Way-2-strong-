@@ -132,21 +132,33 @@ void taskCalculTorque(void *pvParameters)
   {
     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
     {
-      torquePoignet = sin(anglePoignet) * cstPoignet;
-      torqueCoude = torquePoignet + sin(angleCoude) * cstCoude;
-      torqueEpaule = torqueCoude + sin(angleEpaule) * cstEpaule;
+      if(runmode == 0) // E-stop
+      {
+        commandeMoteurEpaule = 0;
+        commandeMoteurCoude = 0;
+        commandeMoteurPoignet = 0;
+      }
+      else if(runmode == 1) // Interface gère les commandes
+      {
+        // do nothing
+      }
+      else if(runmode == 2) // Mode anti-gravité
+      {
+        torquePoignet = sin(anglePoignet) * cstPoignet;
+        torqueCoude = torquePoignet + sin(angleCoude) * cstCoude;
+        torqueEpaule = torqueCoude + sin(angleEpaule) * cstEpaule;
 
-      goalCourantPoignet = (torquePoignet + kt_petit*io_petit)/io_petit;
-      goalCourantCoude = (torqueCoude + kt_petit*io_petit)/io_petit;
-      goalCourantEpaule = (torqueEpaule + kt_gros*io_gros)/io_gros;
+        goalCourantPoignet = (torquePoignet + kt_petit*io_petit)/io_petit;
+        goalCourantCoude = (torqueCoude + kt_petit*io_petit)/io_petit;
+        goalCourantEpaule = (torqueEpaule + kt_gros*io_gros)/io_gros;
 
-      goalTensionPoignet = goalCourantPoignet/r_moteur;
-      goalTensionCoude = goalCourantCoude/r_moteur;
+        goalTensionPoignet = goalCourantPoignet/r_moteur;
+        goalTensionCoude = goalCourantCoude/r_moteur;
 
-      commandeMoteurEpaule = goalCourantEpaule;
-      commandeMoteurCoude = goalTensionCoude;
-      commandeMoteurPoignet = goalTensionPoignet;
-
+        commandeMoteurEpaule = goalCourantEpaule;
+        commandeMoteurCoude = goalTensionCoude;
+        commandeMoteurPoignet = goalTensionPoignet;
+      }
       xSemaphoreGive(mutex_data);
     }
   }
