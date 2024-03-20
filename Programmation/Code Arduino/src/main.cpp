@@ -80,6 +80,8 @@ void taskCommInterface( void *pvParameters)
   exoSquelette exo_temp = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   int runmode_temp = 0;
   String message = "";
+  String commandeActuel = "";
+  int moteurActuel = 0;
 
   (void) pvParameters;
   for(;;)
@@ -103,32 +105,32 @@ void taskCommInterface( void *pvParameters)
       message = Serial.readStringUntil('\n');
       //Défini le runmode en fonction du message envoyé par l'interface
       if(message.charAt(0) == 0)
-      {
         runmode_temp = 0;
-      }
       else if(message.charAt(0) == 1)
-      {
         runmode_temp = 1;
-      }
      else if(message.charAt(0) == 2)
-      {
         runmode_temp = 2;
-      }
 
-      //S'assure du mode manuel, et regarde le numéro du moteur à envoyer une commande 
-      //(message: 1,3,commande): mode manuel, moteur épaule, commande à envoyer à l'épaule
+      // Parsing de la commande manuelle de l'interface
+      if (runmode_temp == 1)
+      {
+        for (unsigned int i = 2; i < message.length(); i++)
+        {
+          if(message.charAt(i) == ',')
+          {
+            if(moteurActuel==0)
+              exo_temp.poignet.commandeMoteur = commandeActuel.toFloat();
+            else if(moteurActuel==1)
+              exo_temp.coude.commandeMoteur = commandeActuel.toFloat();
+            else
+              exo_temp.epaule.commandeMoteur = commandeActuel.toFloat();
 
-      if(message.charAt(2) == 1 && runmode_temp == 1)
-      {
-        exo_temp.poignet.commandeMoteur = message.substring(2, message.indexOf('\n')).toFloat();
-      }
-      else if(message.charAt(2) == 2 && runmode_temp == 1)
-      {
-        exo_temp.coude.commandeMoteur = message.substring(2, message.indexOf('\n')).toFloat();
-      }
-      else if(message.charAt(2) == 3 && runmode_temp == 1)
-      {
-        exo_temp.epaule.commandeMoteur = message.substring(2, message.indexOf('\n')).toFloat();
+            moteurActuel++;
+            commandeActuel = "";
+          }
+          else
+            commandeActuel = commandeActuel + message.charAt(i);
+        }
       }
     }
       
