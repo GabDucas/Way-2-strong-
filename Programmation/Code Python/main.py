@@ -25,6 +25,8 @@ torqueEpaule = 0
 torqueCoude = 0
 torquePoignet = 0
 
+mode_moteur = 2
+
 commandeMoteur = ""
 commandeAEnvoyer = False
 
@@ -33,7 +35,7 @@ lock = threading.Lock()
 class gestionPort():
     def __init__(self):
         self.stringAngles = [0,0,0,0,0,0,0]
-        self.serial_port = serial.Serial('COM12', 9600, timeout=1)
+        self.serial_port = serial.Serial('COM7', 9600, timeout=1)
         self.serial_port.flush()
     def lireValeurs(self) -> []:
         if self.serial_port.in_waiting > 0:
@@ -121,54 +123,162 @@ class RealTimePlot(QMainWindow):
 
 
 class Application(customtkinter.CTk):
+    global temps
+    global angleEpaule
+    global angleCoude
+    global anglePoignet
+    global torqueEpaule
+    global torqueCoude
+    global torquePoignet
 
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
 
-        self.title('Exo')
-        self.geometry('700X500')
+        self.title('Exosquelette')
+        self.geometry('1400X1000')
 
-        #Initialisation des différentes affaires de l'interface
-       # self.labelTitre = customtkinter.CTkLabel(master=self, font=("Arial Black", 32), text="Info Exosquelette")
-        self.labelMoteurPoignet = customtkinter.CTkLabel(master=self, font=("Arial", 16), text="Moteur Poignet")
-        #self.labelMoteurCoude = customtkinter.CTkLabel(master=self, font=("Arial", 16), text="Moteur Coude")
-        #self.labelMoteurEpaule = customtkinter.CTkLabel(master=self, font=("Arial", 16), text="Moteur Épaule")
+        self.grid_columnconfigure(0, weight=2)
+        self.grid_rowconfigure(0, weight=2)
 
-        self.entreePoignet = customtkinter.CTkEntry(master=self)
-        #self.entreeCoude = customtkinter.CTkEntry(master=self)
-        #self.entreeEpaule = customtkinter.CTkEntry(master=self)
+        self.LabelTitre = customtkinter.CTkLabel(master=self, font = ("Helvetica", 24), text="Panneau de contrôle")
+        self.LabelTitre.grid(row=0, column=0, columnspan=2)
 
-        self.boutonMoteur = customtkinter.CTkButton(master=self, text="Envoie commande",
-                                                     command=self.commandeBouton)
-        #self.boutonCoude = customtkinter.CTkButton(master=self, text="Envoie commande coude",
-        #                                           command=self.commandeBoutonCoude)
-        #self.boutonEpaule = customtkinter.CTkButton(master=self, text="Envoie commande épaule",
-        #                                            command=self.commandeBoutonEpaule)
+        self.frameGauche = customtkinter.CTkFrame(self)
+        self.frameGauche.grid(row=1, column=0)
 
-        #Initialisation de la géométrie des items dans l'interface
-        #self.labelTitre.grid(row=0, column=1, pady=40)
+        self.frameDroit = customtkinter.CTkFrame(self)
+        self.frameDroit.grid(row=1, column=1)
 
-        #self.labelMoteurPoignet.grid(row=2, column=0, padx=5, pady=15)
-        #self.labelMoteurCoude.grid(row=3, column=0, padx=5, pady=15)
-        #self.labelMoteurEpaule.grid(row=4, column=0, padx=5, pady=15)
+        ## Frame Gauche
+        self.frameGauche_Haut = customtkinter.CTkFrame(self.frameGauche)
+        self.frameGauche_Haut.grid(row=0, column=0)
 
-        self.entreePoignet.grid(row=3, column=0, padx=5, pady=15)
-        #self.entreeCoude.grid(row=3, column=1, padx=5, pady=15)
-        #self.entreeEpaule.grid(row=4, column=1, padx=5, pady=15)
+        self.frameGauche_Bas = customtkinter.CTkFrame(self.frameGauche)
+        self.frameGauche_Bas.grid(row=1, column=0)
 
-        self.boutonMoteur.grid(row=4, column=0, pady=5)
-        #self.boutonCoude.grid(row=3, column=2, pady=5)
-        #self.boutonEpaule.grid(row=4, column=2, pady=5)
+        # Frame Gauche Haut (Choix des modes)
+        self.labelMode = customtkinter.CTkLabel(master=self.frameGauche_Haut, font=("Helvetica", 16), text="Mode : ")
 
-        self.menu = customtkinter.CTkOptionMenu(master=self, values=["Poignet", "Coude", "Épaule", "Tous les moteurs"])
-        self.menu.set("Choix moteur")
-        self.menu.grid(row=2, column=0, padx=40, pady=40)
+        check_var_Anti = customtkinter.StringVar(value="Off")
+        self.checkAntigrav = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Anti-Gravité", variable=check_var_Anti, onvalue=1, offvalue=2)
 
-        self.threadUpdate = threading.Thread(target=self.updateLabels)
-        self.threadUpdate.start()
+        check_var_Manuel = customtkinter.StringVar(value="Off")
+        self.checkManuel = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Manuel", variable=check_var_Manuel, onvalue=1, offvalue=2)
 
-        #Possibilité d'ajout d'un menu
+        self.labelMode.grid(row=0, column=0)
+        self.checkAntigrav.grid(row=1, column=0)
+        self.checkManuel.grid(row=2, column=0)
+
+
+        # Frame Gauche Bas (Envoi de commande)
+        self.labelEnvoieCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16), text="Envoie de commandes aux moteurs : ", pady=20)
+
+        self.labelPoignetCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16), text="Poignet :")
+        self.labelCoudeCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16),
+                                                           text="Coude :")
+        self.labelEpauleCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16),
+                                                           text="Épaule :")
+
+        self.valeurPoignetEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=100)
+        self.valeurCoudeEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=100)
+        self.valeurEpauleEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=100)
+
+        self.boutonMoteur = customtkinter.CTkButton(master=self.frameGauche_Bas, text="Envoie Commande",  width=100, command=self.commandeBouton )
+
+        #self.menu = customtkinter.CTkOptionMenu(master=self.frameGauche_Bas, values=["Poignet", "Coude", "Épaule", "Tous les moteurs"])
+        #self.menu.set("Choix moteur")
+        #self.menu.grid(row=1, column=0, padx=20, pady=20)
+
+        self.labelEnvoieCommande.grid(row=0, column=0, columnspan=4)
+
+        self.labelPoignetCommande.grid(row=1,column=0)
+        self.labelCoudeCommande.grid(row=1, column=1)
+        self.labelEpauleCommande.grid(row=1, column=2)
+
+        self.valeurPoignetEntry.grid(row=2, column=0)
+        self.valeurCoudeEntry.grid(row=2, column=1)
+        self.valeurEpauleEntry.grid(row=2, column=2)
+
+        self.boutonMoteur.grid(row=2, column=3)
+
+        ## Frame Droit
+        self.frameDroit_Haut = customtkinter.CTkFrame(self.frameDroit)
+        self.frameDroit_Haut.grid(row=0, column=0)
+
+        self.frameDroit_bas = customtkinter.CTkFrame(self.frameDroit)
+        self.frameDroit_bas.grid(row=1, column=0)
+
+        # Frame Droit Haut (Affichage des valeurs en temps réel)
+        self.labelAngle = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Angle")
+        self.labelCouple = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Couple")
+        self.labelTemps = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Temps")
+
+        self.valeurLabelPoignet = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16),
+                                                         text="Poignet : ")
+        self.valeurLabelCoude = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16),
+                                                         text="Coude : ")
+        self.valeurLabelEpaule = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16),
+                                                         text="Epaule : ")
+
+        self.valeurAnglePoignet = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
+        self.valeurAngleCoude = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
+        self.valeurAngleEpaule = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
+
+        self.valeurCouplePoignet = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
+        self.valeurCoupleCoude = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
+        self.valeurCoupleEpaule = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
+
+        self.valeurTemps = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0", pady=20)
+
+        self.labelAngle.grid(row=0, column=1)
+        self.labelCouple.grid(row=0, column=2)
+
+        self.valeurLabelPoignet.grid(row=1, column=0)
+        self.valeurAnglePoignet.grid(row=1, column=1)
+        self.valeurCouplePoignet.grid(row=1, column=2)
+
+        self.valeurLabelCoude.grid(row=2, column=0)
+        self.valeurAngleCoude.grid(row=2, column=1)
+        self.valeurCoupleCoude.grid(row=2, column=2)
+
+        self.valeurLabelEpaule.grid(row=3, column=0)
+        self.valeurAngleEpaule.grid(row=3, column=1)
+        self.valeurCoupleEpaule.grid(row=3, column=2)
+
+        self.labelTemps.grid(row=4, column=0)
+        self.valeurTemps.grid(row=4, column=1)
+
+        # Frame Droit Bas (Bouton d'arrêt)
+        self.boutonArret = customtkinter.CTkButton(self.frameDroit_bas, text="Bouton d'arrêt", font=("Helvetica", 1),
+                                                   width=150, height=150, corner_radius=150)
+        self.boutonArret.grid(row=0,column=0)
+
+        threadUpdate = threading.Thread(target=self.set_valeur).start()
+
+
+    def set_valeur(self):
+        global temps
+        global angleEpaule
+        global angleCoude
+        global anglePoignet
+        global torqueEpaule
+        global torqueCoude
+        global torquePoignet
+        global mode_moteur
+
+        while 1:
+            self.valeurAnglePoignet.configure(text=str(anglePoignet))
+            self.valeurAngleCoude.configure(text=str(angleCoude))
+            self.valeurAngleEpaule.configure(text=str(angleEpaule))
+            self.valeurCouplePoignet.configure(text=str(torquePoignet))
+            self.valeurCoupleCoude.configure(text=str(torqueCoude))
+            self.valeurCoupleEpaule.configure(text=str(torqueEpaule))
+            self.valeurTemps.configure(text=str(temps))
+
+            mode_moteur = self.checkManuel.get()
+
+
 
 
     def commandeBouton(self):
@@ -177,22 +287,16 @@ class Application(customtkinter.CTk):
         global commandeAEnvoyer
         with lock:
             commandeAEnvoyer = True
-            #mettre des condition pour le get
-            commandeMoteur = self.entreePoignet.get()
-            print(commandeMoteur)
-
-    def updateLabels(self):
-        global temps
-        global angleEpaule
-        global angleCoude
-        global anglePoignet
-        global torqueEpaule
-        global torqueCoude
-        global torquePoignet
-        while 1:
-            with lock:
-                self.boutonMoteur.configure(text=angleCoude)
-
+            commandePoignetMoteur = self.valeurPoignetEntry.get()
+            if commandePoignetMoteur == "":
+                commandePoignetMoteur = 0
+            commandeCoudeMoteur = self.valeurCoudeEntry.get()
+            if commandeCoudeMoteur == "":
+                commandeCoudeMoteur = 0
+            commandeEpauleMoteur = self.valeurEpauleEntry.get()
+            if commandeEpauleMoteur == "":
+                commandeEpauleMoteur = 0
+            commandeMoteur = str(mode_moteur) + "," + str(commandePoignetMoteur) + "," + str(commandeCoudeMoteur)+ "," + str(commandeEpauleMoteur)
 
 
 #Permet de lançer le graph dans un autre thread
@@ -228,29 +332,16 @@ def gestionPortSerie():
 
         if (commandeAEnvoyer == True):
             objet.envoieCommande()
+            objet.serial_port.write(b'commandeMoteur')
             commandeAEnvoyer = False
 
         time.sleep(0.2)
         print(stringAngle)
-
-
+        print(mode_moteur)
 
 if __name__ == "__main__":
 
-    # threadLecture = threading.Thread(target=lirePortSerie)
-    # threadLecture.start()
-
-    #threadApp = threading.Thread(target=Application).start()
-
+    app = Application()
     threadGraph = threading.Thread(target=Graph).start()
     threadLireAngle = threading.Thread(target=gestionPortSerie).start()
-    app = Application()
     app.mainloop()
-
-
-
-
-
-
-
-
