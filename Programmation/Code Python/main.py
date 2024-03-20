@@ -35,7 +35,7 @@ lock = threading.Lock()
 class gestionPort():
     def __init__(self):
         self.stringAngles = [0,0,0,0,0,0,0]
-        self.serial_port = serial.Serial('COM7', 9600, timeout=1)
+        self.serial_port = serial.Serial('COM9', 9600, timeout=1)
         self.serial_port.flush()
     def lireValeurs(self) -> []:
         if self.serial_port.in_waiting > 0:
@@ -46,7 +46,7 @@ class gestionPort():
     def envoieCommande(self):
         global commandeMoteur
         with lock:
-            commandeMoteur = commandeMoteur + "\n"
+            commandeMoteur = commandeMoteur + '\n'
             print(commandeMoteur.encode("utf-8"))
             self.serial_port.write(commandeMoteur.encode("utf-8"))
 
@@ -318,6 +318,7 @@ def gestionPortSerie():
     global commandeAEnvoyer
 
     objet = gestionPort()
+
     while 1:
         with lock:
             stringAngle = objet.lireValeurs()
@@ -330,18 +331,19 @@ def gestionPortSerie():
             torqueCoude = float(stringAngle[5])
             torquePoignet = float(stringAngle[6])
 
+
         if (commandeAEnvoyer == True):
             objet.envoieCommande()
             objet.serial_port.write(b'commandeMoteur')
             commandeAEnvoyer = False
 
         time.sleep(0.2)
-        print(stringAngle)
-        print(mode_moteur)
+        #print(stringAngle)
+        #print(mode_moteur)
 
 if __name__ == "__main__":
-
     app = Application()
     threadGraph = threading.Thread(target=Graph).start()
+
     threadLireAngle = threading.Thread(target=gestionPortSerie).start()
     app.mainloop()
