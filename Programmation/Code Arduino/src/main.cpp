@@ -13,6 +13,7 @@
 #include <semphr.h>
 #include <SoftwareSerial.h>
 #include <floatToString.h>
+#include <Dynamixel2Arduino.h>
 
 
 ///////////////////////////
@@ -40,19 +41,23 @@ exoSquelette exo;
 
 // Structures FreeRTOS
 SemaphoreHandle_t mutex_data = xSemaphoreCreateMutex();
-
+void taskCommICC( void *pvParameters);
+void taskCommInterface(void *pvParameters);
+void taskCalculTorque(void *pvParameters);
 int runmode = 0; // = 0 : E-stop
                  // = 1 : contrôle manuel de l'interface
                  // = 2 : contrôle automatique anti-gravité
 
-const int openRB_ID = 0;        // TO DO : À définir
-const int moteurPoignet_ID = 0; // TO DO : À définir
-const int moteurCoude_ID = 0;   // TO DO : À définir
-const int moteurEpaule_ID = 0;  // TO DO : À définir
-
-void taskCommICC( void *pvParameters);
-void taskCommInterface(void *pvParameters);
-void taskCalculTorque(void *pvParameters);
+// Comm dynamixels
+const uint8_t moteurPoignet_ID = 6;
+const uint8_t moteurCoude_ID = 2; 
+const uint8_t moteurEpaule_ID = 1;
+#define DXL_SERIAL   Serial3
+#define DEBUG_SERIAL Serial
+const int DXL_DIR_PIN = 84; // OpenCR Board's DIR PIN
+const float DXL_PROTOCOL_VERSION = 2.0;
+using namespace ControlTableItem;
+Dynamixel2Arduino dxl(DXL_SERIAL,DXL_DIR_PIN);
 
 
 void setup()
@@ -60,9 +65,31 @@ void setup()
   Serial.begin(9600);
   Wire.begin();
 
-  xTaskCreate(taskCommICC,      "comm openrb",128,NULL,1,NULL);
+  // Task Creation
+  //xTaskCreate(taskCommICC,      "comm openrb",128,NULL,1,NULL);
   xTaskCreate(taskCommInterface,"comm inter", 128,NULL,1,NULL);
-  xTaskCreate(taskCalculTorque, "calcul",     128,NULL,1,NULL);    
+  // xTaskCreate(taskCalculTorque, "calcul",     128,NULL,1,NULL);  
+
+  // Use UART port of DYNAMIXEL Shield to debug.
+  DEBUG_SERIAL.begin(115200);
+  while(!DEBUG_SERIAL);
+
+  // Set Port baudrate to 57600bps. This has to match with DYNAMIXEL baudrate.
+  dxl.begin(57600);
+  // Set Port Protocol Version. This has to match with DYNAMIXEL protocol version.
+  dxl.setPortProtocolVersion(DXL_PROTOCOL_VERSION);
+  // Get DYNAMIXEL information
+  dxl.ping(moteurPoignet_ID);
+  dxl.ping(moteurCoude_ID);
+  dxl.ping(moteurEpaule_ID);
+
+  // Turn off torque when configuring items in EEPROM area
+  /*dxl.torqueOff(DXL_ID);
+  dxl.setOperatingMode(DXL_ID, OP_POSITION);
+  dxl.torqueOn(DXL_ID);
+
+  // Limit the maximum velocity in Position Control Mode. Use 0 for Max speed
+  dxl.writeControlTableItem(PROFILE_VELOCITY, DXL_ID, 30);*/
 }
 
 void loop()
@@ -248,7 +275,7 @@ void taskCommICC(void *pvParameters)
     
     
     ////// Envoi au openRB //////
-    Wire.beginTransmission(openRB_ID);
+    //Wire.beginTransmission(openRB_ID);
     
     //Transmission poignet
     stringBuffer = String(moteurPoignet_ID) + "," + String(exo_temp.poignet.commandeMoteur);
@@ -271,7 +298,7 @@ void taskCommICC(void *pvParameters)
     ///// Réception du openRB ///////
     
     // Parsing
-    Wire.requestFrom(openRB_ID, 32);
+    //Wire.requestFrom(openRB_ID, 32);
     
     c = '0';
     currID = 1;
