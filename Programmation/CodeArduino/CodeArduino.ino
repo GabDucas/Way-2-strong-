@@ -6,13 +6,12 @@
 ///////////////////////////
 // ***    Headers    *** //
 ///////////////////////////
-//#include <Arduino.h>
 #include <Arduino_FreeRTOS.h>
 #include <Wire.h>
-#include <event_groups.h>
-#include <semphr.h>
-#include <SoftwareSerial.h>
 #include <floatToString.h>
+#include <Dynamixel2Arduino.h>
+#include <semphr.h>
+#include <event_groups.h>
 
 
 ///////////////////////////
