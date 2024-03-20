@@ -77,9 +77,9 @@ void loop()
 void taskCommInterface( void *pvParameters)
 {
   // Variables temporaires
-  exoSquelette exo_temp;
-  int runmode_temp;
-  String message;
+  exoSquelette exo_temp = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  int runmode_temp = 0;
+  String message = "";
 
   (void) pvParameters;
   for(;;)
@@ -148,8 +148,8 @@ void taskCalculTorque(void *pvParameters)
   (void) pvParameters;
 
   // Variables temporaires
-  exoSquelette exo_temp;
-  int runmode_temp;
+  exoSquelette exo_temp = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  int runmode_temp = 0;
 
   // Constantes physiques
   const float cstPoignet = 0.08193312;
@@ -220,8 +220,8 @@ void taskCommICC(void *pvParameters)
   (void) pvParameters;
 
   // Variables temporaires
-  int runmode_temp;
-  exoSquelette exo_temp;
+  exoSquelette exo_temp = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
+  int runmode_temp = 0;
   
   float position1 = 0;
   float position2 = 0;
