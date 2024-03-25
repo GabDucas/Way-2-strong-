@@ -6,13 +6,8 @@
 ///////////////////////////
 // ***    Headers    *** //
 ///////////////////////////
-#include <Arduino_FreeRTOS.h>
-#include <Wire.h>
-#include <floatToString.h>
+#include <RTOS.h>
 #include <Dynamixel2Arduino.h>
-#include <semphr.h>
-#include <event_groups.h>
-
 
 ///////////////////////////
 //   Variables globales  //
@@ -38,7 +33,7 @@ struct exoSquelette
 exoSquelette exo = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
 // Structures FreeRTOS
-SemaphoreHandle_t mutex_data = xSemaphoreCreateMutex();
+SemaphoreHandle_t mutex_data;
 
 int runmode = 0; // = 0 : E-stop
                  // = 1 : contrôle manuel de l'interface
@@ -49,34 +44,49 @@ const int moteurPoignet_ID = 0; // TO DO : À définir
 const int moteurCoude_ID = 0;   // TO DO : À définir
 const int moteurEpaule_ID = 0;  // TO DO : À définir
 
-void taskCommICC( void *pvParameters);
 void taskCommInterface(void *pvParameters);
 void taskCalculTorque(void *pvParameters);
-void fortnite(void *pvParameters);
+
+osThreadId thread_id_interface;
+osThreadId thread_id_test;
+osThreadId thread_id_test;
 
 void setup()
 {
-  Serial.begin(9600);
-  Wire.begin();
+  Serial.begin(115200);
+  mutex_data = xSemaphoreCreateMutex();
   //xTaskCreate(test,      "comm openrb",128,NULL,1,NULL);
-  //xTaskCreate(taskCommICC,      "comm openrb",128,NULL,1,NULL);
-  xTaskCreate(taskCommInterface,"comm inter", 2056,NULL,4,NULL);
-  xTaskCreate(taskCalculTorque, "calcul",     2056,NULL,0,NULL); 
+  // xTaskCreate(taskCalculTorque, "calcul",     2056,NULL,0,NULL); 
 
+  osThreadDef(interface, taskCommInterface, osPriorityNormal,0,2056);
+  osThreadDef(ttestt, test, osPriorityNormal,0,2056);
+
+  thread_id_interface = osThreadCreate(osThread(interface), NULL);
+  thread_id_test = osThreadCreate(osThread(ttestt), NULL);
+
+  osKernelStart();
 }
 
 void loop()
 {    
-
 }
 
 ///////////////////////////
 // ***     TASKS     *** //
 ///////////////////////////
-void test( void *pvParameters)
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void test( void const *pvParameters)
 {
+  (void) pvParameters;
+
+  uint32_t start;
+  uint32_t end;
+
   for(;;)
-     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+  {
+    start=osKernelSysTick();
+
+    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
     {
       exo.poignet.angle = exo.poignet.angle + 1;
       exo.poignet.torque = exo.poignet.torque + 2;
@@ -85,15 +95,17 @@ void test( void *pvParameters)
       exo.epaule.angle = exo.epaule.angle + 5;
       exo.epaule.torque = exo.epaule.torque + 6;
       xSemaphoreGive(mutex_data);
-
-      vTaskDelay(pdMS_TO_TICKS(1000));
     }
-        
 
-    
+    end=osKernelSysTick();
+    osDelay(pdMS_TO_TICKS(1000) - (end-start));
+  }
 }
-void taskCommInterface( void *pvParameters)
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+void taskCommInterface(void const *pvParameters)
 {
+  (void) pvParameters;
+
   // Variables temporaires
   exoSquelette exo_temp = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   int runmode_temp = 0;
@@ -101,9 +113,12 @@ void taskCommInterface( void *pvParameters)
   String commandeActuel = "";
   int moteurActuel = 0;
   
-  //(void) pvParameters;
+  uint32_t start;
+  uint32_t end;
   for(;;)
   {
+    start=osKernelSysTick();
+
     // Receive global variables
     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
     {
@@ -122,7 +137,7 @@ void taskCommInterface( void *pvParameters)
     {
       message = Serial.readStringUntil('\n');
       
-      //Défini le runmode en fonction du message envoyé par l'interface
+      //Défini le runmode en fonction du message envoyé par l'interface. Format: b'(mode),commandePoignet,commandeCoude,commandeEpaule
       if(message.charAt(2) == '0')
         runmode_temp = 0;
       else if(message.charAt(2) == '1')
@@ -130,7 +145,7 @@ void taskCommInterface( void *pvParameters)
      else if(message.charAt(2) == '2')
         runmode_temp = 2;
 
-      // Parsing de la commande manuelle de l'interface
+      // Si mode manuel activé, traverse chaque lettre du message afin de lire la commande. 
       if (runmode_temp == 1)
       {
         for (int i = 4; i < message.length(); i++)
@@ -140,17 +155,18 @@ void taskCommInterface( void *pvParameters)
             if(moteurActuel==0)
             {
               exo_temp.poignet.commandeMoteur = commandeActuel.toFloat();
-              exo_temp.epaule.torque = 10000000;
             }
             else if(moteurActuel==1)
               exo_temp.coude.commandeMoteur = commandeActuel.toFloat();
             else
               exo_temp.epaule.commandeMoteur = commandeActuel.toFloat();
-
+            
+            //Lorsqu'on croise une virgule, on a trouvé la fin de la commande. On doit donc la reset et changer de moteur
             moteurActuel++;
             commandeActuel = "";
           }
-          else
+          //Ajoute chaque caractère dans commandeActuel, SAUF si la caractère est une virgule
+          else 
             commandeActuel = commandeActuel + message.charAt(i);
         }
       }
@@ -163,11 +179,14 @@ void taskCommInterface( void *pvParameters)
       runmode = runmode_temp;
       xSemaphoreGive(mutex_data);
     }
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    
+
+    end=osKernelSysTick();
+    osDelay(pdMS_TO_TICKS(1000) - (end-start));
   }
 }
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+//Tâche permettant de calculer les valeurs de torque théoriquep..
 void taskCalculTorque(void *pvParameters)
 {
   (void) pvParameters;
@@ -187,7 +206,6 @@ void taskCalculTorque(void *pvParameters)
   const float io_petit = 0.131;
   const float r_moteur = 1; // TO DO : à définir
 
-  
   for( ;; )
   {
     // Receive global variables
@@ -238,105 +256,5 @@ void taskCalculTorque(void *pvParameters)
       runmode = runmode_temp;
       xSemaphoreGive(mutex_data);
     }
-    vTaskDelay(pdMS_TO_TICKS(1000));
-  }
-  
-  
-}
-
-void taskCommICC(void *pvParameters)
-{
-  (void) pvParameters;
-
-  // Variables temporaires
-  exoSquelette exo_temp = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-  int runmode_temp = 0;
-  
-  float position1 = 0;
-  float position2 = 0;
-  float position3 = 0;
-
-  String stringBuffer;
-  const int lengthBuffer = 10;
-  char charBuffer[lengthBuffer];
-
-  char c = '0';
-  int currID = 1;
-
-  for( ;; )
-  {
-    // Receive global variables
-    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
-    {
-      exo_temp = exo;
-      runmode_temp = runmode;
-      xSemaphoreGive(mutex_data);
-    }
-    
-    
-    ////// Envoi au openRB //////
-    Wire.beginTransmission(openRB_ID);
-    
-    //Transmission poignet
-    stringBuffer = String(moteurPoignet_ID) + "," + String(exo_temp.poignet.commandeMoteur);
-    stringBuffer.toCharArray(charBuffer, lengthBuffer); 
-    Wire.write(charBuffer);
-
-    //Transmission coude
-    stringBuffer = String(moteurCoude_ID) + "," + String(exo_temp.coude.commandeMoteur);
-    stringBuffer.toCharArray(charBuffer, lengthBuffer); 
-    Wire.write(charBuffer);
-
-    //Transmission epaule
-    stringBuffer = String(moteurEpaule_ID) + "," + String(exo_temp.epaule.commandeMoteur);
-    stringBuffer.toCharArray(charBuffer, lengthBuffer); 
-    Wire.write(charBuffer);
-    
-    Wire.endTransmission();
-
-
-    ///// Réception du openRB ///////
-    
-    // Parsing
-    Wire.requestFrom(openRB_ID, 32);
-    
-    c = '0';
-    currID = 1;
-
-    while (0 < Wire.available()) 
-    { // loop through all char
-      c = Wire.read(); // receive byte as a character
-      if (c == ',') // check for motor ID and torque separator  // (c >= '0' && c <= '9')
-      {
-        currID += 1;
-      }
-      else if (currID == 1)
-      {
-        position1 = position1 * 10 + (c - '0');
-      }
-      else if (currID == 2)
-      {
-        position2 = position2 * 10 + (c - '0');
-      }
-      else if (currID == 3)
-      {
-        position3 = position3 * 10 + (c - '0');
-      }
-    }
-
-    // Conversion
-    // mapper position (tick encodeurs) sur 0 à 360 degrés
-    // vérifier si ajout offset est nécesssaire
-    exo_temp.poignet.angle = position1; // TO DO : vérifier si position1 va avec anglePoignet
-    exo_temp.coude.angle = position2;
-    exo_temp.epaule.angle = position3;
-
-    // Send global variables
-    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
-    {
-      exo = exo_temp;
-      runmode = runmode_temp;
-      xSemaphoreGive(mutex_data);
-    } 
   }
 }
