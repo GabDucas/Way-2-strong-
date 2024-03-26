@@ -116,7 +116,7 @@ void setup()
   mutex_data = xSemaphoreCreateMutex();
   osThreadDef(interface, taskCommInterface, osPriorityNormal,0,2056);
   osThreadDef(ttestt, test, osPriorityNormal,0,2056);//changer test pour machine état moteurs
-  osThreadDef(moving_moteurs, moteurs_controls, osPriorityNormal,0,2056);//changer test pour machine état moteurs
+  osThreadDef(moving_moteurs, moteurs_controls, osPriorityNormal,0,2056);//changer test pour machine état moteurs PRIORITÉ BASSE 
 
   thread_id_moteurs_controls = osThreadCreate(osThread(moving_moteurs), NULL);
   thread_id_interface = osThreadCreate(osThread(interface), NULL);
