@@ -42,11 +42,13 @@ enum TypeDeMode{
   MANUEL = 1,
   ANTI_GRATIVE = 2,
   CALIBRATION = 3,
+  STATIQUE = 4
 };
 uint16_t runmode = E_STOP; // = 0 : E-stop
                  // = 1 : contrôle manuel de l'interface
                  // = 2 : contrôle automatique anti-gravité
                  // = 3 : calibration
+                 // = 4 : statique à la position actuelle
 
 //++++++++++++++++++++++++++++++++++++++++++++++VARIABLE POUR MOTEURS++++++++++++++++++++++++++++++++++++++++++++++
 // PARAMS SPÉCIFIQUE À OPENCR
@@ -217,8 +219,16 @@ void moteurs_controls( void const *pvParameters)
           }
         break;
 
+        case STATIQUE:
+          set_mode(OP_EXTENDED_POSITION);
+          dxl.setGoalPosition(ID_COUDE, dxl.getPresentPosition(ID_COUDE));
+          dxl.setGoalPosition(ID_EPAULE, dxl.getPresentPosition(ID_EPAULE));
+          dxl.setGoalPosition(ID_POIGNET, dxl.getPresentPosition(ID_POIGNET));
+        break;
+
         default:
           //APPEL MEME FONCTION QUE E-STOP(I GUESS?)
+          //Appelle rien je penses
         break;
       }
     }
@@ -351,6 +361,9 @@ void taskCommInterface(void const *pvParameters)
   {
     start=osKernelSysTick();
 
+    // Update the exo present data
+    updateExo();
+
     // Receive global variables
     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
     {
@@ -435,75 +448,53 @@ void taskCommInterface(void const *pvParameters)
 }
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-//Tâche permettant de calculer les valeurs de torque théoriquep..
-// void taskCalculTorque(void *pvParameters)
-// {
-//   (void) pvParameters;
+//Calcul le torque, récupères les différentes données des moteurs et update la struct de l'Exo
+void updateExo()
+{
+  // Variables temporaires
+  exoSquelette exo_temp = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
 
-//   // Variables temporaires
-//   exoSquelette exo_temp = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
-//   uint16_t runmode_temp = 2;
+  // Constantes physiques
+  const float cstPoignet = 0.08193312;
+  const float cstCoude = 0.4133795679;
+  const float cstEpaule = 0.5955808941;
 
-//   // Constantes physiques
-//   const float cstPoignet = 0.08193312;
-//   const float cstCoude = 0.4133795679;
-//   const float cstEpaule = 0.5955808941;
+  const float kt_gros = 1.8;
+  const float io_gros = 0.142;
+  const float kt_petit = 0.897;
+  const float io_petit = 0.131;
+  const float r_moteur = 1; // TO DO : à définir
 
-//   const float kt_gros = 1.8;
-//   const float io_gros = 0.142;
-//   const float kt_petit = 0.897;
-//   const float io_petit = 0.131;
-//   const float r_moteur = 1; // TO DO : à définir
-
-//   for( ;; )
-//   {
-//     // Receive global variables
-//     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
-//     {
-//       exo_temp = exo;
-//       runmode_temp = runmode;
-//       xSemaphoreGive(mutex_data);
-//     }
-
-//     if(runmode_temp == 0) // E-stop
-//     {
-//       exo_temp.epaule.commandeMoteur = 0;
-//       exo_temp.coude.commandeMoteur = 0;
-//       exo_temp.poignet.commandeMoteur = 0;
-//     }
-//     else if(runmode_temp == 1) // Interface gère les commandes
-//     {
-//       // do nothing
-//     }
-//     else if(runmode_temp == 2) // Mode anti-gravité
-//     {
-//       exo_temp.poignet.torque = sin(exo_temp.poignet.angle) * cstPoignet;
-//       exo_temp.coude.torque = exo_temp.poignet.torque + sin(exo_temp.coude.angle) * cstCoude;
-//       exo_temp.epaule.torque = exo_temp.coude.torque + sin(exo_temp.epaule.angle) * cstEpaule;
-
-//       exo_temp.poignet.goalCourant = (exo_temp.poignet.torque + kt_petit*io_petit)/io_petit;
-//       exo_temp.coude.goalCourant = (exo_temp.coude.torque + kt_petit*io_petit)/io_petit;
-//       exo_temp.epaule.goalCourant = (exo_temp.epaule.torque + kt_gros*io_gros)/io_gros;
-
-//       exo_temp.poignet.goalTension = exo_temp.poignet.goalCourant/r_moteur;
-//       exo_temp.coude.goalTension = exo_temp.coude.goalCourant/r_moteur;
-      
-//       exo_temp.poignet.commandeMoteur = exo_temp.poignet.goalTension;
-//       exo_temp.coude.commandeMoteur = exo_temp.coude.goalTension;
-//       exo_temp.epaule.commandeMoteur = exo_temp.epaule.goalCourant;
-      
-//     }
-//     else if(runmode_temp == 3)
-//     {
-//       //autre méthode de controle!
-//     }
+  // Lecture des données actuelles des moteurs
+  // float angle;
+  // float torque;
+  // float goalCourant;
+  // float goalTension;
+  // float commandeMoteur;
+  exo_temp.poignet.angle = dxl.getPresentPosition(ID_POIGNET, UNIT_DEGREE);
+  exo_temp.coude.angle = dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE);
+  exo_temp.epaule.angle = dxl.getPresentPosition(ID_EPAULE, UNIT_DEGREE);
   
-//     // Send global variables
-//     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
-//     {
-//       exo = exo_temp;
-//       runmode = runmode_temp;
-//       xSemaphoreGive(mutex_data);
-//     }
-//   }
-// }
+
+    exo_temp.poignet.torque = sin(exo_temp.poignet.angle) * cstPoignet;
+    exo_temp.coude.torque = exo_temp.poignet.torque + sin(exo_temp.coude.angle) * cstCoude;
+    exo_temp.epaule.torque = exo_temp.coude.torque + sin(exo_temp.epaule.angle) * cstEpaule;
+
+    exo_temp.poignet.goalCourant = (exo_temp.poignet.torque + kt_petit*io_petit)/io_petit;
+    exo_temp.coude.goalCourant = (exo_temp.coude.torque + kt_petit*io_petit)/io_petit;
+    exo_temp.epaule.goalCourant = (exo_temp.epaule.torque + kt_gros*io_gros)/io_gros;
+
+    exo_temp.poignet.goalTension = exo_temp.poignet.goalCourant/r_moteur;
+    exo_temp.coude.goalTension = exo_temp.coude.goalCourant/r_moteur;
+    
+    //exo_temp.poignet.commandeMoteur = exo_temp.poignet.goalTension;
+    //exo_temp.coude.commandeMoteur = exo_temp.coude.goalTension;
+    //exo_temp.epaule.commandeMoteur = exo_temp.epaule.goalCourant;
+
+  // Send global variables
+  if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+  {
+    exo = exo_temp;
+    xSemaphoreGive(mutex_data);
+  }
+}
