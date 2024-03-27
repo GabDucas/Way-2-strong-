@@ -67,7 +67,7 @@ void setup() {
   dxl.torqueOn(ID_COUDE);
   dxl.torqueOn(ID_POIGNET);
 
-  // calibration();
+  calibration();
   // anti_gravite();
 
 //POUR METTRE LE 0 NE PAS DECOMMENTÉ
@@ -206,14 +206,14 @@ void set_PosGoal_deg(const uint8_t ID, float goal){
     goal + zero_offset_coude;
   }
 
-  // if(ID == ID_POIGNET)
-  // {
-  //   if(goal > 75.0)//TODO: JSP L'ANGLE À VERIF
-  //     goal = 75.0;
+  if(ID == ID_POIGNET)
+  {
+    if(goal > 75.0 + zero_offset_poignet)//TODO: JSP L'ANGLE À VERIF
+      goal = 75.0;
 
-  //   if(goal < -75.0)//TODO: JSP L'ANGLE À VERIF
-  //     goal = -75.0;
-  //   goal + zero_offset_poignet;
-  // }
+    if(goal < -75.0 + zero_offset_poignet)//TODO: JSP L'ANGLE À VERIF
+      goal = -75.0;
+    goal + zero_offset_poignet;
+  }
   dxl.setGoalPosition(ID, goal, UNIT_DEGREE);
 }

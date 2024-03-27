@@ -69,7 +69,7 @@ double max_PWM_poignet = 0.0;
 
 float zero_offset_epaule = -5;
 float zero_offset_coude = -3;
-float zero_offset_poignet = 0;
+float zero_offset_poignet = 355.62;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 void taskCommInterface(void *pvParameters);
@@ -298,10 +298,10 @@ void set_PosGoal_deg(const uint8_t ID, float goal){
 
   if(ID == ID_POIGNET)
   {
-    if(goal > 75.0)//TODO: JSP L'ANGLE À VERIF
+    if(goal > 75.0 + zero_offset_poignet)//TODO: JSP L'ANGLE À VERIF
       goal = 75.0;
 
-    if(goal < -75.0)//TODO: JSP L'ANGLE À VERIF
+    if(goal < -75.0 + zero_offset_poignet)//TODO: JSP L'ANGLE À VERIF
       goal = -75.0;
     goal + zero_offset_poignet;
   }
