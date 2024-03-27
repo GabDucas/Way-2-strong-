@@ -35,7 +35,7 @@ lock = threading.Lock()
 class gestionPort():
     def __init__(self):
         self.stringAngles = [0,0,0,0,0,0,0]
-        self.serial_port = serial.Serial('COM9', 9600, timeout=1)
+        self.serial_port = serial.Serial('COM8', 9600, timeout=1)
         self.serial_port.flush()
     def lireValeurs(self) -> []:
         if self.serial_port.in_waiting > 0:
@@ -46,9 +46,10 @@ class gestionPort():
     def envoieCommande(self):
         global commandeMoteur
         with lock:
-            commandeMoteur = commandeMoteur + '\n'
-            print(commandeMoteur.encode("utf-8"))
-            self.serial_port.write(commandeMoteur.encode("utf-8"))
+            commandeMoteur = commandeMoteur +  ",\n"
+            #print(commandeMoteur.encode())
+            self.serial_port.write(commandeMoteur.encode())
+
 
 
 class RealTimePlot(QMainWindow):
@@ -334,7 +335,6 @@ def gestionPortSerie():
 
         if (commandeAEnvoyer == True):
             objet.envoieCommande()
-            objet.serial_port.write(b'commandeMoteur')
             commandeAEnvoyer = False
 
         time.sleep(0.2)
