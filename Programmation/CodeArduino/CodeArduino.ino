@@ -66,6 +66,10 @@ using namespace ControlTableItem;
 double max_PWM_epaule = 0.0;
 double max_PWM_coude = 0.0;
 double max_PWM_poignet = 0.0;
+
+float zero_offset_epaule = -5;
+float zero_offset_coude = -3;
+float zero_offset_poignet = 0;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 void taskCommInterface(void *pvParameters);
@@ -180,7 +184,7 @@ void moteurs_controls( void const *pvParameters)
       runmode_temp = runmode;
       xSemaphoreGive(mutex_data);
     }
-
+    runmode_temp = ANTI_GRATIVE;
     switch(runmode_temp)
     {
       case E_STOP:
@@ -236,10 +240,13 @@ void calibration(){
   float PWM_poignet = 0.0;
   
   set_mode(OP_EXTENDED_POSITION);
+  dxl.setGoalPWM(ID_EPAULE, 500);
+  dxl.setGoalPWM(ID_COUDE, 500);
+  dxl.setGoalPWM(ID_POIGNET, 500);
 
-  set_PosGoal_deg(ID_EPAULE, 0);//VALEUR POUR 90 deg
-  set_PosGoal_deg(ID_COUDE, 0);//VALEUR POUR 90 deg 
-  set_PosGoal_deg(ID_POIGNET, 0);//VALEUR POUR 90 deg 
+  dxl.setGoalPosition(ID_EPAULE, zero_offset_epaule, UNIT_DEGREE);//VALEUR POUR 90 deg TODO: REDEFINIR 0 COMME 90 DEG
+  dxl.setGoalPosition(ID_COUDE, zero_offset_coude, UNIT_DEGREE);//VALEUR POUR 90 deg 
+  dxl.setGoalPosition(ID_POIGNET, zero_offset_poignet, UNIT_DEGREE);//VALEUR POUR 90 deg 
   delay(1000);
 
   for (int i = 0; i<N_moyenne ; i++)
@@ -269,7 +276,6 @@ void anti_gravite(){
 }
 
 void set_PosGoal_deg(const uint8_t ID, float goal){
-
   if(ID == ID_EPAULE)
   {
     if(goal > 90.0)
@@ -277,6 +283,7 @@ void set_PosGoal_deg(const uint8_t ID, float goal){
 
     if(goal < -90.0)
       goal = -90.0;
+    goal + zero_offset_epaule;
   }
   
   if(ID == ID_COUDE)
@@ -286,6 +293,7 @@ void set_PosGoal_deg(const uint8_t ID, float goal){
 
     if(goal < -1.0)
       goal = -1.0;
+    goal + zero_offset_coude;
   }
 
   if(ID == ID_POIGNET)
@@ -295,6 +303,7 @@ void set_PosGoal_deg(const uint8_t ID, float goal){
 
     if(goal < -75.0)//TODO: JSP L'ANGLE À VERIF
       goal = -75.0;
+    goal + zero_offset_poignet;
   }
   dxl.setGoalPosition(ID, goal, UNIT_DEGREE);
 }

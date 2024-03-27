@@ -23,6 +23,10 @@ double max_PWM_epaule = 0.0;
 double max_PWM_coude = 0.0;
 double max_PWM_poignet = 0.0;
 
+float zero_offset_epaule = -5;
+float zero_offset_coude = -3;
+float zero_offset_poignet = 355.62;
+
 void setup() {
   // Use UART port of DYNAMIXEL Shield to debug.
   DEBUG_SERIAL.begin(115200);
@@ -38,28 +42,30 @@ void setup() {
   // Turn off torque when configuring items in EEPROM area
   dxl.torqueOff(ID_EPAULE);
   dxl.setOperatingMode(ID_EPAULE, OP_EXTENDED_POSITION);
-  dxl.torqueOn(ID_EPAULE);
 
 //COUDE
   // Turn off torque when configuring items in EEPROM area
   dxl.torqueOff(ID_COUDE);
   dxl.setOperatingMode(ID_COUDE, OP_EXTENDED_POSITION);
-  dxl.torqueOn(ID_COUDE);
 
 //POIGNET
   // Turn off torque when configuring items in EEPROM area
   dxl.torqueOff(ID_POIGNET);
   dxl.setOperatingMode(ID_POIGNET, OP_EXTENDED_POSITION);
-  dxl.torqueOn(ID_POIGNET);
+
 //WIRE TABLE
   // Limit the maximum velocity in Position Control Mode. Use 0 for Max speed
   dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 30);
   dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 30);
   dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 30);
 // TODO: À TESTER:
-  dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_EPAULE, 30);// TODO: VOIR SI CA MARCHE LOL
-  dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_COUDE, 30);
-  dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_POIGNET, 30);
+  dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_EPAULE, 5);// TODO: VOIR SI CA MARCHE LOL
+  dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_COUDE, 5);
+  dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_POIGNET, 5);
+
+  dxl.torqueOn(ID_EPAULE);
+  dxl.torqueOn(ID_COUDE);
+  dxl.torqueOn(ID_POIGNET);
 
   // calibration();
   // anti_gravite();
@@ -89,13 +95,11 @@ void setup() {
 // double theta_zero_poignet = 0.0;
 //   delay(1000);
 //   theta_zero_poignet = dxl.getPresentPosition(ID_POIGNET);
-//   DEBUG_SERIAL.print(theta_zero_poignet);
+//   // DEBUG_SERIAL.print(theta_zero_poignet);
 
 //   dxl.torqueOff(ID_POIGNET);
 //   dxl.writeControlTableItem(HOMING_OFFSET,ID_POIGNET,-theta_zero_poignet);
 //   dxl.torqueOn(ID_POIGNET);
-
-  
 
 }
 
@@ -106,7 +110,7 @@ void loop() {
   DEBUG_SERIAL.print(" THETA COUDE: ");
   DEBUG_SERIAL.print(dxl.getPresentPosition(ID_COUDE));
   DEBUG_SERIAL.print(" THETA POIGNET: ");
-  DEBUG_SERIAL.println(dxl.getPresentPosition(ID_POIGNET));
+  DEBUG_SERIAL.println(dxl.getPresentPosition(ID_POIGNET, UNIT_DEGREE));
 
   // DEBUG_SERIAL.print(" PWM EPAULE ");
   // DEBUG_SERIAL.print(dxl.getPresentPWM(ID_EPAULE));
@@ -146,10 +150,13 @@ void calibration(){
   float PWM_poignet = 0.0;
   
   set_mode(OP_EXTENDED_POSITION);
+  dxl.setGoalPWM(ID_EPAULE, 500);
+  dxl.setGoalPWM(ID_COUDE, 500);
+  dxl.setGoalPWM(ID_POIGNET, 500);
 
-  dxl.setGoalPosition(ID_EPAULE, 0, UNIT_DEGREE);//VALEUR POUR 90 deg TODO: REDEFINIR 0 COMME 90 DEG
-  dxl.setGoalPosition(ID_COUDE, 0, UNIT_DEGREE);//VALEUR POUR 90 deg 
-  dxl.setGoalPosition(ID_POIGNET, 0, UNIT_DEGREE);//VALEUR POUR 90 deg 
+  dxl.setGoalPosition(ID_EPAULE, zero_offset_epaule, UNIT_DEGREE);//VALEUR POUR 90 deg TODO: REDEFINIR 0 COMME 90 DEG
+  dxl.setGoalPosition(ID_COUDE, zero_offset_coude, UNIT_DEGREE);//VALEUR POUR 90 deg 
+  dxl.setGoalPosition(ID_POIGNET, zero_offset_poignet, UNIT_DEGREE);//VALEUR POUR 90 deg 
   delay(1000);
 
   for (int i = 0; i<N_moyenne ; i++)
@@ -168,18 +175,17 @@ void calibration(){
 void anti_gravite(){
   set_mode(OP_VELOCITY);
 
-  dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule+5);
+  dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule+2);
   dxl.setGoalVelocity(ID_EPAULE, 0);
 
-  dxl.setGoalPWM(ID_COUDE, max_PWM_coude+5);
+  dxl.setGoalPWM(ID_COUDE, max_PWM_coude+2);
   dxl.setGoalVelocity(ID_COUDE, 0);
 
-  dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet+5);
+  dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet+2);
   dxl.setGoalVelocity(ID_POIGNET, 0);
 }
 
 void set_PosGoal_deg(const uint8_t ID, float goal){
-
   if(ID == ID_EPAULE)
   {
     if(goal > 90.0)
@@ -187,6 +193,7 @@ void set_PosGoal_deg(const uint8_t ID, float goal){
 
     if(goal < -90.0)
       goal = -90.0;
+    goal + zero_offset_epaule;
   }
   
   if(ID == ID_COUDE)
@@ -196,15 +203,17 @@ void set_PosGoal_deg(const uint8_t ID, float goal){
 
     if(goal < -1.0)
       goal = -1.0;
+    goal + zero_offset_coude;
   }
 
-  if(ID == ID_POIGNET)
-  {
-    if(goal > 75.0)//TODO: JSP L'ANGLE À VERIF
-      goal = 75.0;
+  // if(ID == ID_POIGNET)
+  // {
+  //   if(goal > 75.0)//TODO: JSP L'ANGLE À VERIF
+  //     goal = 75.0;
 
-    if(goal < -75.0)//TODO: JSP L'ANGLE À VERIF
-      goal = -75.0;
-  }
+  //   if(goal < -75.0)//TODO: JSP L'ANGLE À VERIF
+  //     goal = -75.0;
+  //   goal + zero_offset_poignet;
+  // }
   dxl.setGoalPosition(ID, goal, UNIT_DEGREE);
 }
