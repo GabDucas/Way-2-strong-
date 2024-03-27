@@ -175,6 +175,8 @@ void moteurs_controls( void const *pvParameters)
 
   exoSquelette exo_temp = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   uint16_t runmode_temp;
+  uint16_t runmode_temp_prev;
+
   for(;;)
   {
     start=osKernelSysTick();
@@ -184,30 +186,34 @@ void moteurs_controls( void const *pvParameters)
       runmode_temp = runmode;
       xSemaphoreGive(mutex_data);
     }
-    runmode_temp = ANTI_GRATIVE;
-    switch(runmode_temp)
+    // runmode_temp = ANTI_GRATIVE;
+    if(runmode_temp != runmode_temp_prev)
     {
-      case E_STOP:
-        //THINGS
-      break;
+      switch(runmode_temp)
+      {
+        case E_STOP:
+          //THINGS
+        break;
 
-      case ANTI_GRATIVE:
-        calibration();
-        anti_gravite();
-      break;
+        case ANTI_GRATIVE:
+          calibration();
+          anti_gravite();
+        break;
 
-      case MANUEL:
-        set_mode(OP_EXTENDED_POSITION);
-        set_PosGoal_deg(ID_COUDE, exo_temp.coude.commandeMoteur);
-        set_PosGoal_deg(ID_EPAULE, exo_temp.epaule.commandeMoteur);
-        set_PosGoal_deg(ID_POIGNET, exo_temp.poignet.commandeMoteur);
-      break;
+        case MANUEL:
+          set_mode(OP_EXTENDED_POSITION);
+          set_PosGoal_deg(ID_COUDE, exo_temp.coude.commandeMoteur);
+          set_PosGoal_deg(ID_EPAULE, exo_temp.epaule.commandeMoteur);
+          set_PosGoal_deg(ID_POIGNET, exo_temp.poignet.commandeMoteur);
+        break;
 
-      default:
-        //APPEL MEME FONCTION QUE E-STOP(I GUESS?)
-      break;
+        default:
+          //APPEL MEME FONCTION QUE E-STOP(I GUESS?)
+        break;
+      }
     }
 
+    runmode_temp_prev = runmode_temp;
     end=osKernelSysTick();
     osDelay(pdMS_TO_TICKS(100) - (end-start));
   }
