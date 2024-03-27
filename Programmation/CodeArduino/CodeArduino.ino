@@ -237,7 +237,7 @@ void calibration(){
   
   set_mode(OP_EXTENDED_POSITION);
 
-  set_PosGoal_deg(ID_EPAULE, -97);//VALEUR POUR 90 deg TODO: REDEFINIR 0 COMME 90 DEG
+  set_PosGoal_deg(ID_EPAULE, 0);//VALEUR POUR 90 deg
   set_PosGoal_deg(ID_COUDE, 0);//VALEUR POUR 90 deg 
   set_PosGoal_deg(ID_POIGNET, 0);//VALEUR POUR 90 deg 
   delay(1000);

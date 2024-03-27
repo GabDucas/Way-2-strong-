@@ -61,31 +61,57 @@ void setup() {
   dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_COUDE, 30);
   dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_POIGNET, 30);
 
-  calibration();
-  anti_gravite();
+  // calibration();
+  // anti_gravite();
 
 //POUR METTRE LE 0 NE PAS DECOMMENTÉ
 //ÉPAULE
 // double theta_zero = 0.0;
-  // delay(1000);
-  // theta_zero = dxl.getPresentPosition(ID_EPAULE);
-  // DEBUG_SERIAL.print(theta_zero);
+//   delay(1000);
+//   theta_zero = dxl.getPresentPosition(ID_EPAULE);
+//   DEBUG_SERIAL.print(theta_zero);
 
-  // dxl.torqueOff(ID_EPAULE);
-  // dxl.writeControlTableItem(HOMING_OFFSET,ID_EPAULE,-560);
-  // dxl.torqueOn(ID_EPAULE);
+//   dxl.torqueOff(ID_EPAULE);
+//   dxl.writeControlTableItem(HOMING_OFFSET,ID_EPAULE,-384);
+//   dxl.torqueOn(ID_EPAULE);
+
+//COUDE
+// double theta_zero_coude = 0.0;
+//   delay(1000);
+//   theta_zero_coude = dxl.getPresentPosition(ID_COUDE);
+//   DEBUG_SERIAL.print(theta_zero_coude);
+
+//   dxl.torqueOff(ID_COUDE);
+//   dxl.writeControlTableItem(HOMING_OFFSET,ID_COUDE,-327);
+//   dxl.torqueOn(ID_COUDE);
+
+//Poignet
+// double theta_zero_poignet = 0.0;
+//   delay(1000);
+//   theta_zero_poignet = dxl.getPresentPosition(ID_POIGNET);
+//   DEBUG_SERIAL.print(theta_zero_poignet);
+
+//   dxl.torqueOff(ID_POIGNET);
+//   dxl.writeControlTableItem(HOMING_OFFSET,ID_POIGNET,-theta_zero_poignet);
+//   dxl.torqueOn(ID_POIGNET);
+
+  
+
 }
 
 void loop() {
 
-  // DEBUG_SERIAL.print("THETA EPAULE: ");
-  // DEBUG_SERIAL.print(dxl.getPresentPosition(ID_EPAULE, UNIT_DEGREE));
-  // DEBUG_SERIAL.print(" THETA COUDE: ");
-  // DEBUG_SERIAL.print(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE));
-  DEBUG_SERIAL.print(" PWM EPAULE ");
-  DEBUG_SERIAL.print(dxl.getPresentPWM(ID_EPAULE));
-  DEBUG_SERIAL.print(" PWM COUDE ");
-  DEBUG_SERIAL.println(dxl.getPresentPWM(ID_COUDE));
+  DEBUG_SERIAL.print("THETA EPAULE: ");
+  DEBUG_SERIAL.print(dxl.getPresentPosition(ID_EPAULE));
+  DEBUG_SERIAL.print(" THETA COUDE: ");
+  DEBUG_SERIAL.print(dxl.getPresentPosition(ID_COUDE));
+  DEBUG_SERIAL.print(" THETA POIGNET: ");
+  DEBUG_SERIAL.println(dxl.getPresentPosition(ID_POIGNET));
+
+  // DEBUG_SERIAL.print(" PWM EPAULE ");
+  // DEBUG_SERIAL.print(dxl.getPresentPWM(ID_EPAULE));
+  // DEBUG_SERIAL.print(" PWM COUDE ");
+  // DEBUG_SERIAL.println(dxl.getPresentPWM(ID_COUDE));
  
   // DEBUG_SERIAL.print(" OFFSET : ");
   // DEBUG_SERIAL.println(OP_EXTENDED_POSITION);
@@ -121,7 +147,7 @@ void calibration(){
   
   set_mode(OP_EXTENDED_POSITION);
 
-  dxl.setGoalPosition(ID_EPAULE, -97, UNIT_DEGREE);//VALEUR POUR 90 deg TODO: REDEFINIR 0 COMME 90 DEG
+  dxl.setGoalPosition(ID_EPAULE, 0, UNIT_DEGREE);//VALEUR POUR 90 deg TODO: REDEFINIR 0 COMME 90 DEG
   dxl.setGoalPosition(ID_COUDE, 0, UNIT_DEGREE);//VALEUR POUR 90 deg 
   dxl.setGoalPosition(ID_POIGNET, 0, UNIT_DEGREE);//VALEUR POUR 90 deg 
   delay(1000);
