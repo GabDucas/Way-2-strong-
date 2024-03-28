@@ -1,6 +1,4 @@
 import time
-
-import PyQt5
 import customtkinter
 import serial
 import threading
@@ -33,7 +31,10 @@ commandeAEnvoyer = False
 
 lock = threading.Lock()
 
+#Classe permettant de gérer la lecture du port série
 class gestionPort():
+
+    #Initialiser le port série
     def __init__(self):
         self.stringAngles = [0,0,0,0,0,0,0]
         self.serial_port = serial.Serial('COM8', 9600, timeout=1)
@@ -49,9 +50,9 @@ class gestionPort():
         global ancienneCommandeMoteur
         with lock:
             commandeMoteur = (commandeMoteur +  ",\n")
-            if commandeMoteur != (ancienneCommandeMoteur+  ",\n"):
-                self.serial_port.write(commandeMoteur.encode())
-                ancienneCommandeMoteur = commandeMoteur
+            #if commandeMoteur != (ancienneCommandeMoteur+  ",\n"):
+            self.serial_port.write(commandeMoteur.encode())
+            ancienneCommandeMoteur = commandeMoteur
 
 class RealTimePlot(QMainWindow):
     def __init__(self):
@@ -327,9 +328,9 @@ def gestionPortSerie():
             stringAngle = objet.lireValeurs()
 
             temps = float(stringAngle[0])
-            angleEpaule = float(stringAngle[1])
+            anglePoignet = float(stringAngle[1])
             angleCoude = float(stringAngle[2])
-            anglePoignet = float(stringAngle[3])
+            angleEpaule = float(stringAngle[3])
             torqueEpaule = float(stringAngle[4])
             torqueCoude = float(stringAngle[5])
             torquePoignet = float(stringAngle[6])
@@ -339,7 +340,7 @@ def gestionPortSerie():
             objet.envoieCommande()
             commandeAEnvoyer = False
 
-        time.sleep(0.2)
+        time.sleep(0.1)
         #print(stringAngle)
         #print(mode_moteur)
 
