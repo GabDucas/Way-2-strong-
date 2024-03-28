@@ -28,6 +28,7 @@ torquePoignet = 0
 mode_moteur = 2
 
 commandeMoteur = ""
+ancienneCommandeMoteur = "commande de moteur"
 commandeAEnvoyer = False
 
 lock = threading.Lock()
@@ -35,7 +36,7 @@ lock = threading.Lock()
 class gestionPort():
     def __init__(self):
         self.stringAngles = [0,0,0,0,0,0,0]
-        self.serial_port = serial.Serial('COM9', 9600, timeout=1)
+        self.serial_port = serial.Serial('COM8', 9600, timeout=1)
         self.serial_port.flush()
     def lireValeurs(self) -> []:
         if self.serial_port.in_waiting > 0:
@@ -45,11 +46,12 @@ class gestionPort():
 
     def envoieCommande(self):
         global commandeMoteur
+        global ancienneCommandeMoteur
         with lock:
-            commandeMoteur = commandeMoteur + '\n'
-            print(commandeMoteur.encode("utf-8"))
-            self.serial_port.write(commandeMoteur.encode("utf-8"))
-
+            commandeMoteur = (commandeMoteur +  ",\n")
+            if commandeMoteur != (ancienneCommandeMoteur+  ",\n"):
+                self.serial_port.write(commandeMoteur.encode())
+                ancienneCommandeMoteur = commandeMoteur
 
 class RealTimePlot(QMainWindow):
     def __init__(self):
@@ -284,6 +286,7 @@ class Application(customtkinter.CTk):
     def commandeBouton(self):
 
         global commandeMoteur
+        global ancienneCommandeMoteur
         global commandeAEnvoyer
         with lock:
             commandeAEnvoyer = True
@@ -297,7 +300,7 @@ class Application(customtkinter.CTk):
             if commandeEpauleMoteur == "":
                 commandeEpauleMoteur = 0
             commandeMoteur = str(mode_moteur) + "," + str(commandePoignetMoteur) + "," + str(commandeCoudeMoteur)+ "," + str(commandeEpauleMoteur)
-
+            ancienneCommandeMoteur = commandeMoteur
 
 #Permet de lançer le graph dans un autre thread
 def Graph():
@@ -334,7 +337,6 @@ def gestionPortSerie():
 
         if (commandeAEnvoyer == True):
             objet.envoieCommande()
-            objet.serial_port.write(b'commandeMoteur')
             commandeAEnvoyer = False
 
         time.sleep(0.2)

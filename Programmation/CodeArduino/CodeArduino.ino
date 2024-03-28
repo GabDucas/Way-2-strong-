@@ -71,19 +71,19 @@ double max_PWM_poignet = 0.0;
 
 float zero_offset_epaule = -5;
 float zero_offset_coude = -3;
-float zero_offset_poignet = 355.62;
+float zero_offset_poignet = 0;//355.62;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 void taskCommInterface(void *pvParameters);
 void taskCalculTorque(void *pvParameters);
 
 osThreadId thread_id_interface;
-osThreadId thread_id_test;
+//osThreadId thread_id_test;
 osThreadId thread_id_moteurs_controls;
 
 void setup()
 {
-  Serial.begin(115200);
+  Serial.begin(9600);
 
   //++++++++++++++++SET_UP POUR MOTEUR++++++++++++++++
   // Set Port baudrate to 57600bps. This has to match with DYNAMIXEL baudrate.
@@ -120,14 +120,15 @@ void setup()
   //++++++++++++++++++++++++++++++++++++++++++++++++++
 
   mutex_data = xSemaphoreCreateMutex();
-  osThreadDef(interface, taskCommInterface, osPriorityNormal,0,2056);
-  osThreadDef(ttestt, test, osPriorityNormal,0,2056);//changer test pour machine état moteurs
+  osThreadDef(interface, taskCommInterface, osPriorityAboveNormal,0,2056);
+  //osThreadDef(ttestt, test, osPriorityNormal,0,2056);//changer test pour machine état moteurs
   osThreadDef(moving_moteurs, moteurs_controls, osPriorityNormal,0,2056);//changer test pour machine état moteurs PRIORITÉ BASSE 
 
   thread_id_moteurs_controls = osThreadCreate(osThread(moving_moteurs), NULL);
   thread_id_interface = osThreadCreate(osThread(interface), NULL);
-  thread_id_test = osThreadCreate(osThread(ttestt), NULL);
+  //thread_id_test = osThreadCreate(osThread(ttestt), NULL);
 
+  pinMode(13, OUTPUT);
   osKernelStart();
   //SI JAMAIS ON A BESOIN
   //xTaskCreate(test,      "comm openrb",128,NULL,1,NULL);
@@ -142,6 +143,7 @@ void loop()
 // ***     TASKS     *** //
 ///////////////////////////
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+/*
 void test( void const *pvParameters)
 {
   (void) pvParameters;
@@ -168,7 +170,7 @@ void test( void const *pvParameters)
     osDelay(pdMS_TO_TICKS(1000) - (end-start));
   }
 }
-
+*/
 void moteurs_controls( void const *pvParameters)
 {
   (void) pvParameters;
@@ -177,19 +179,24 @@ void moteurs_controls( void const *pvParameters)
 
   exoSquelette exo_temp = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
   uint16_t runmode_temp;
-  uint16_t runmode_temp_prev;
+  uint16_t runmode_temp_prev = 24;
+
+  float commande_prev_epaule = 1000.0;
+  float commande_prev_coude = 1000.0;
+  float commande_prev_poignet = 1000.0;
 
   for(;;)
   {
     start=osKernelSysTick();
-    if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+    if( xSemaphoreTake(mutex_data,1) == pdTRUE ) 
     {
       exo_temp = exo;
       runmode_temp = runmode;
+      // Serial.println(runmode_temp);
       xSemaphoreGive(mutex_data);
     }
     // runmode_temp = ANTI_GRATIVE;
-    if(runmode_temp != runmode_temp_prev)
+    if(runmode_temp != runmode_temp_prev || runmode_temp == MANUEL)
     {
       switch(runmode_temp)
       {
@@ -203,10 +210,13 @@ void moteurs_controls( void const *pvParameters)
         break;
 
         case MANUEL:
-          set_mode(OP_EXTENDED_POSITION);
-          set_PosGoal_deg(ID_COUDE, exo_temp.coude.commandeMoteur);
-          set_PosGoal_deg(ID_EPAULE, exo_temp.epaule.commandeMoteur);
-          set_PosGoal_deg(ID_POIGNET, exo_temp.poignet.commandeMoteur);
+          if(exo_temp.epaule.commandeMoteur != commande_prev_epaule || exo_temp.coude.commandeMoteur != commande_prev_coude || exo_temp.poignet.commandeMoteur != commande_prev_poignet )
+          {
+            set_mode(OP_EXTENDED_POSITION);
+            set_PosGoal_deg(ID_COUDE, exo_temp.coude.commandeMoteur + zero_offset_coude);
+            set_PosGoal_deg(ID_EPAULE, exo_temp.epaule.commandeMoteur + zero_offset_epaule);
+            set_PosGoal_deg(ID_POIGNET, exo_temp.poignet.commandeMoteur + zero_offset_poignet);
+          }
         break;
 
         case STATIQUE:
@@ -223,9 +233,16 @@ void moteurs_controls( void const *pvParameters)
       }
     }
 
+    // Serial.print("loop MODE: ");
+    // Serial.println(runmode_temp);
     runmode_temp_prev = runmode_temp;
+    commande_prev_epaule = exo_temp.epaule.commandeMoteur;
+    commande_prev_coude = exo_temp.coude.commandeMoteur;
+    commande_prev_poignet = exo_temp.poignet.commandeMoteur;
+   
+    
     end=osKernelSysTick();
-    osDelay(pdMS_TO_TICKS(100) - (end-start));
+    osDelay(pdMS_TO_TICKS(100));
   }
 }
 
@@ -237,6 +254,7 @@ void set_mode(int mode){
   // }
   // else{
   dxl.torqueOff(ID_COUDE);
+
   dxl.setOperatingMode(ID_COUDE, mode);
   dxl.torqueOn(ID_COUDE);
 
@@ -260,9 +278,9 @@ void calibration(){
   dxl.setGoalPWM(ID_COUDE, 500);
   dxl.setGoalPWM(ID_POIGNET, 500);
 
-  dxl.setGoalPosition(ID_EPAULE, zero_offset_epaule, UNIT_DEGREE);//VALEUR POUR 90 deg TODO: REDEFINIR 0 COMME 90 DEG
-  dxl.setGoalPosition(ID_COUDE, zero_offset_coude, UNIT_DEGREE);//VALEUR POUR 90 deg 
-  dxl.setGoalPosition(ID_POIGNET, zero_offset_poignet, UNIT_DEGREE);//VALEUR POUR 90 deg 
+  set_PosGoal_deg(ID_EPAULE, zero_offset_epaule);//VALEUR POUR 90 deg TODO: REDEFINIR 0 COMME 90 DEG
+  set_PosGoal_deg(ID_COUDE, zero_offset_coude);//VALEUR POUR 90 deg 
+  set_PosGoal_deg(ID_POIGNET, zero_offset_poignet);//VALEUR POUR 90 deg 
   delay(1000);
 
   for (int i = 0; i<N_moyenne ; i++)
@@ -302,20 +320,20 @@ void anti_gravite(){
 void set_PosGoal_deg(const uint8_t ID, float goal){
   if(ID == ID_EPAULE)
   {
-    if(goal > 90.0)
+    if(goal > 90.0 + zero_offset_epaule)
       goal = 90.0;
 
-    if(goal < -90.0)
+    if(goal < -90.0 + zero_offset_epaule)
       goal = -90.0;
     goal + zero_offset_epaule;
   }
   
   if(ID == ID_COUDE)
   {
-    if(goal > 110.0)//TODO: JSP L'ANGLE À VERIF
+    if(goal > 110.0 + zero_offset_coude)//TODO: JSP L'ANGLE À VERIF
       goal = 110.0;
 
-    if(goal < -1.0)
+    if(goal < -1.0 + zero_offset_coude)
       goal = -1.0;
     goal + zero_offset_coude;
   }
@@ -370,38 +388,55 @@ void taskCommInterface(void const *pvParameters)
     if(Serial.available())
     {
       message = Serial.readStringUntil('\n');
-      
+      message.trim();
+
+      // if(message == "HHH")
+      //   digitalWrite(13, HIGH);
+
       //Défini le runmode en fonction du message envoyé par l'interface. Format: b'(mode),commandePoignet,commandeCoude,commandeEpaule
-      if(message.charAt(2) == '0')
+      if(message.charAt(0) == '0')
         runmode_temp = 0;
-      else if(message.charAt(2) == '1')
+      else if(message.charAt(0) == '1')
         runmode_temp = 1;
-     else if(message.charAt(2) == '2')
+     else if(message.charAt(0) == '2')
         runmode_temp = 2;
 
       // Si mode manuel activé, traverse chaque lettre du message afin de lire la commande. 
       if (runmode_temp == 1)
       {
-        for (int i = 4; i < message.length(); i++)
+        // digitalWrite(13, HIGH);
+
+        Serial.println(message);
+        for (int i = 2; i < message.length(); i++)
         {
           if(message.charAt(i) == ',')
           {
+            // Serial.println(moteurActuel);
             if(moteurActuel==0)
             {
               exo_temp.poignet.commandeMoteur = commandeActuel.toFloat();
+              moteurActuel++;
+              // Serial.println(exo_temp.poignet.commandeMoteur);
             }
             else if(moteurActuel==1)
+            {
               exo_temp.coude.commandeMoteur = commandeActuel.toFloat();
-            else
+              moteurActuel++;
+              // Serial.println(exo_temp.coude.commandeMoteur);             
+            }
+            else if(moteurActuel == 2)
+            {
               exo_temp.epaule.commandeMoteur = commandeActuel.toFloat();
-            
+              // Serial.println(exo_temp.epaule.commandeMoteur);
+              moteurActuel = 0;
+            }
             //Lorsqu'on croise une virgule, on a trouvé la fin de la commande. On doit donc la reset et changer de moteur
-            moteurActuel++;
             commandeActuel = "";
           }
           //Ajoute chaque caractère dans commandeActuel, SAUF si la caractère est une virgule
           else 
             commandeActuel = commandeActuel + message.charAt(i);
+            // Serial.println(commandeActuel);
         }
       }
     }
@@ -415,7 +450,7 @@ void taskCommInterface(void const *pvParameters)
     }
 
     end=osKernelSysTick();
-    osDelay(pdMS_TO_TICKS(1000) - (end-start));
+    osDelay(pdMS_TO_TICKS(100));
   }
 }
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
