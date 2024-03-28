@@ -380,8 +380,10 @@ void taskCommInterface(void const *pvParameters)
     }
 
     ////// Envoi à l'interface //////
-    Serial.println(String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
-                   String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque));
+    Serial.println( String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
+                   String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque) + "," + String(exo_temp.poignet.velocite) +
+                   "," + String(exo_temp.coude.velocite) + "," + String(exo_temp.epaule.velocite) + "," + String(exo_temp.poignet.goalPWM) +
+                   "," + String(exo_temp.coude.goalPWM) + "," + String(exo_temp.epaule.goalPWM) );
     
 
     ////// Réception de l'interface //////
