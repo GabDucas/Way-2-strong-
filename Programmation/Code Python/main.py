@@ -28,6 +28,7 @@ torquePoignet = 0
 mode_moteur = 2
 
 commandeMoteur = ""
+ancienneCommandeMoteur = "commande de moteur"
 commandeAEnvoyer = False
 
 lock = threading.Lock()
@@ -45,12 +46,12 @@ class gestionPort():
 
     def envoieCommande(self):
         global commandeMoteur
+        global ancienneCommandeMoteur
         with lock:
-            commandeMoteur = commandeMoteur +  ",\n"
-            #print(commandeMoteur.encode())
-            self.serial_port.write(commandeMoteur.encode())
-
-
+            commandeMoteur = (commandeMoteur +  ",\n")
+            if commandeMoteur != (ancienneCommandeMoteur+  ",\n"):
+                self.serial_port.write(commandeMoteur.encode())
+                ancienneCommandeMoteur = commandeMoteur
 
 class RealTimePlot(QMainWindow):
     def __init__(self):
@@ -285,6 +286,7 @@ class Application(customtkinter.CTk):
     def commandeBouton(self):
 
         global commandeMoteur
+        global ancienneCommandeMoteur
         global commandeAEnvoyer
         with lock:
             commandeAEnvoyer = True
@@ -298,7 +300,7 @@ class Application(customtkinter.CTk):
             if commandeEpauleMoteur == "":
                 commandeEpauleMoteur = 0
             commandeMoteur = str(mode_moteur) + "," + str(commandePoignetMoteur) + "," + str(commandeCoudeMoteur)+ "," + str(commandeEpauleMoteur)
-
+            ancienneCommandeMoteur = commandeMoteur
 
 #Permet de lançer le graph dans un autre thread
 def Graph():
