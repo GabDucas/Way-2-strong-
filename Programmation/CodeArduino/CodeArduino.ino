@@ -18,8 +18,8 @@ struct joint
 {
   float angle;
   float torque;
-  float goalCourant;
-  float goalTension;
+  float velocite;
+  float goalPWM;
   float commandeMoteur;
 };
 
@@ -276,6 +276,14 @@ void calibration(){
   max_PWM_epaule = abs(PWM_epaule/N_moyenne);
   max_PWM_coude = abs(PWM_coude/N_moyenne);
   max_PWM_poignet = abs(PWM_poignet/N_moyenne);
+
+  if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+  {
+    exo.poignet.goalPWM = max_PWM_poignet;
+    exo.coude.goalPWM = max_PWM_coude;
+    exo.epaule.goalPWM = max_PWM_epaule;
+    xSemaphoreGive(mutex_data);
+  }
 }
 
 void anti_gravite(){
@@ -430,30 +438,21 @@ void updateExo()
   const float r_moteur = 1; // TO DO : à définir
 
   // Lecture des données actuelles des moteurs
-  // float angle;
-  // float torque;
-  // float goalCourant;
-  // float goalTension;
-  // float commandeMoteur;
+  // Lecture du goalPWM fait dans la calibration
   exo_temp.poignet.angle = dxl.getPresentPosition(ID_POIGNET, UNIT_DEGREE);
   exo_temp.coude.angle = dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE);
   exo_temp.epaule.angle = dxl.getPresentPosition(ID_EPAULE, UNIT_DEGREE);
+
+
+  exo_temp.poignet.velocite = dxl.getPresentVelocity(ID_POIGNET, UNIT_RPM);
+  exo_temp.coude.velocite = dxl.getPresentVelocity(ID_COUDE, UNIT_RPM);
+  exo_temp.epaule.velocite = dxl.getPresentVelocity(ID_EPAULE, UNIT_RPM);
   
 
-    exo_temp.poignet.torque = sin(exo_temp.poignet.angle) * cstPoignet;
-    exo_temp.coude.torque = exo_temp.poignet.torque + sin(exo_temp.coude.angle) * cstCoude;
-    exo_temp.epaule.torque = exo_temp.coude.torque + sin(exo_temp.epaule.angle) * cstEpaule;
+  exo_temp.poignet.torque = sin(exo_temp.poignet.angle) * cstPoignet;
+  exo_temp.coude.torque = exo_temp.poignet.torque + sin(exo_temp.coude.angle) * cstCoude;
+  exo_temp.epaule.torque = exo_temp.coude.torque + sin(exo_temp.epaule.angle) * cstEpaule;
 
-    exo_temp.poignet.goalCourant = (exo_temp.poignet.torque + kt_petit*io_petit)/io_petit;
-    exo_temp.coude.goalCourant = (exo_temp.coude.torque + kt_petit*io_petit)/io_petit;
-    exo_temp.epaule.goalCourant = (exo_temp.epaule.torque + kt_gros*io_gros)/io_gros;
-
-    exo_temp.poignet.goalTension = exo_temp.poignet.goalCourant/r_moteur;
-    exo_temp.coude.goalTension = exo_temp.coude.goalCourant/r_moteur;
-    
-    //exo_temp.poignet.commandeMoteur = exo_temp.poignet.goalTension;
-    //exo_temp.coude.commandeMoteur = exo_temp.coude.goalTension;
-    //exo_temp.epaule.commandeMoteur = exo_temp.epaule.goalCourant;
 
   // Send global variables
   if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
