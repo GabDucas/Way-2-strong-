@@ -92,29 +92,33 @@ class RealTimePlot(QMainWindow):
         self.plotGraph.clear()
         try:
             #Longueur entre les points d'imu
-            l1 = 6
-            l2 = 4
-            l3 = 2
+            l1 = 4
+            l2 = 3
+            l3 = 6
+
 
             #Ajoute un point à (1,1)
             self.data.append((1, 1))
 
+            angleEpauleRad = np.deg2rad(angleEpaule)#(angleEpaule % 360) *2*np.pi/360
+            angleCoudeRad = np.deg2rad(angleCoude)#(angleCoude % 360) * 2 * np.pi / 360
+            anglePoignetRad = np.deg2rad(angleCoude)#(anglePoignet % 360) * 2 * np.pi / 360
             with lock:
-                point1x = l1*np.cos(angleEpaule)
-                point1y = l1*np.sin(angleEpaule)
-                point1 = (point1x, point1y)
+                point1x = l1*np.cos(angleEpauleRad)
+                point1y = l1*np.sin(angleEpauleRad)
+                point1 = (point1x, -point1y)
             self.data.append(point1)
 
             with lock:
-                point2x = point1x + l2*np.cos(angleCoude)
-                point2y = point1y + l2*np.sin(angleCoude)
-                point2 = (point2x, point2y)
+                point2x = point1x + l2*np.cos(angleCoudeRad)
+                point2y = point1y + l2*np.sin(angleCoudeRad)
+                point2 = (point2x, -point2y)
             self.data.append(point2)
 
             with lock:
-                point3x = point2x + l3*np.cos(anglePoignet)
-                point3y = point2y + l3*np.sin(anglePoignet)
-                point3 = (point3x, point3y)
+                point3x = point2x + l3*np.cos(anglePoignetRad)
+                point3y = point2y + l3*np.sin(anglePoignetRad)
+                point3 = (point3x, -point3y)
             self.data.append(point3)
 
 
