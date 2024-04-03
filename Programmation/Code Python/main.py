@@ -92,17 +92,17 @@ class RealTimePlot(QMainWindow):
         self.plotGraph.clear()
         try:
             #Longueur entre les points d'imu
-            l1 = 4
+            l1 = 3
             l2 = 3
-            l3 = 6
+            l3 = 2
 
 
             #Ajoute un point à (1,1)
-            self.data.append((1, 1))
+            self.data.append((0, 0))
 
-            angleEpauleRad = np.deg2rad(angleEpaule)#(angleEpaule % 360) *2*np.pi/360
-            angleCoudeRad = np.deg2rad(angleCoude)#(angleCoude % 360) * 2 * np.pi / 360
-            anglePoignetRad = np.deg2rad(angleCoude)#(anglePoignet % 360) * 2 * np.pi / 360
+            angleEpauleRad = (angleEpaule % 360) *2*np.pi/360
+            angleCoudeRad = (angleCoude % 360) * 2 * np.pi / 360
+            anglePoignetRad = (anglePoignet % 360) * 2 * np.pi / 360
             with lock:
                 point1x = l1*np.cos(angleEpauleRad)
                 point1y = l1*np.sin(angleEpauleRad)
@@ -110,20 +110,23 @@ class RealTimePlot(QMainWindow):
             self.data.append(point1)
 
             with lock:
-                point2x = point1x + l2*np.cos(angleCoudeRad)
-                point2y = point1y + l2*np.sin(angleCoudeRad)
+                point2x = point1x + l2*np.cos(angleCoudeRad + angleEpauleRad)
+                point2y = point1y + l2*np.sin(angleCoudeRad + angleEpauleRad)
                 point2 = (point2x, -point2y)
             self.data.append(point2)
 
             with lock:
-                point3x = point2x + l3*np.cos(anglePoignetRad)
-                point3y = point2y + l3*np.sin(anglePoignetRad)
+                point3x = point2x + l3*np.cos(anglePoignetRad + angleCoudeRad + angleEpauleRad)
+                point3y = point2y + l3*np.sin(anglePoignetRad + angleCoudeRad + angleEpauleRad)
                 point3 = (point3x, -point3y)
             self.data.append(point3)
 
 
             self.plotGraph.plot([x for x, _ in self.data], [y for _, y in self.data], pen=self.pen)
+            #print(self.data.__getitem__(3))
+            print(anglePoignetRad)
             self.data.clear()
+
 
         except Exception as e:
             print(e)

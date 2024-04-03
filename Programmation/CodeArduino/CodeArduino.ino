@@ -70,7 +70,7 @@ double max_PWM_coude = 0.0;
 double max_PWM_poignet = 0.0;
 
 float zero_offset_epaule = -5;
-float zero_offset_coude = 20;// 20;
+float zero_offset_coude = 27.19;// 20;
 float zero_offset_poignet = 0;//355.62;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -97,15 +97,15 @@ void setup()
 
   dxl.torqueOff(ID_EPAULE);
   dxl.setOperatingMode(ID_EPAULE, OP_EXTENDED_POSITION);
-  // dxl.torqueOn(ID_EPAULE);
+  dxl.torqueOn(ID_EPAULE);
 
   dxl.torqueOff(ID_COUDE);
   dxl.setOperatingMode(ID_COUDE, OP_EXTENDED_POSITION);
-  // dxl.torqueOn(ID_COUDE);  
+  dxl.torqueOn(ID_COUDE);  
 
   dxl.torqueOff(ID_POIGNET);
   dxl.setOperatingMode(ID_POIGNET, OP_EXTENDED_POSITION);
-  // dxl.torqueOn(ID_POIGNET);
+  dxl.torqueOn(ID_POIGNET);
 
   //WIRE TABLE
   // Limit the maximum velocity in Position Control Mode. Use 0 for Max speed
@@ -128,10 +128,10 @@ void setup()
    exo = updateExo(exo);
    if(exo.poignet.angle > 300)
      zero_offset_poignet = 360;
-  osThreadDef(interface, taskCommInterface, osPriorityAboveNormal,0,2056);
+  osThreadDef(interface, taskCommInterface, osPriorityNormal,0,2056);
   // osThreadDef(update, updateExo, osPriorityBelowNormal,0,2056);
   //osThreadDef(ttestt, test, osPriorityNormal,0,2056);//changer test pour machine état moteurs
-  osThreadDef(moving_moteurs, moteurs_controls, osPriorityNormal,0,2056);//changer test pour machine état moteurs PRIORITÉ BASSE 
+  osThreadDef(moving_moteurs, moteurs_controls, osPriorityAboveNormal,0,2056);//changer test pour machine état moteurs PRIORITÉ BASSE 
 
   thread_id_moteurs_controls = osThreadCreate(osThread(moving_moteurs), NULL);
   thread_id_interface = osThreadCreate(osThread(interface), NULL);
@@ -191,8 +191,8 @@ void moteurs_controls( void const *pvParameters)
           {
             set_mode(OP_EXTENDED_POSITION);
             set_PosGoal_deg(ID_COUDE, -exo_temp.coude.commandeMoteur + zero_offset_coude);
-            set_PosGoal_deg(ID_EPAULE, exo_temp.epaule.commandeMoteur + zero_offset_epaule);
-            set_PosGoal_deg(ID_POIGNET, exo_temp.poignet.commandeMoteur + zero_offset_poignet);
+            set_PosGoal_deg(ID_EPAULE, -exo_temp.epaule.commandeMoteur + zero_offset_epaule);
+            set_PosGoal_deg(ID_POIGNET, -exo_temp.poignet.commandeMoteur + zero_offset_poignet);
           }
         break;
         
@@ -230,24 +230,25 @@ void moteurs_controls( void const *pvParameters)
 }
 
 void set_mode(int mode){
-  //NICE TO HAVE:
-  //PT FAUT TYPE CAST
-  // if (dxl.readControlTableItem(OPERATING_MODE,ID_EPAULE) == mode){
-  //   return;
-  // }
-  // else{
-  dxl.torqueOff(ID_COUDE);
+  // NICE TO HAVE:
+  // PT FAUT TYPE CAST
+  if ((int)dxl.readControlTableItem(OPERATING_MODE,ID_EPAULE) == mode){
+    return;
+  }
+  else{
+    dxl.torqueOff(ID_COUDE);
 
-  dxl.setOperatingMode(ID_COUDE, mode);
-  dxl.torqueOn(ID_COUDE);
+    dxl.setOperatingMode(ID_COUDE, mode);
+    dxl.torqueOn(ID_COUDE);
 
-  dxl.torqueOff(ID_EPAULE);
-  dxl.setOperatingMode(ID_EPAULE, mode);
-  dxl.torqueOn(ID_EPAULE);
+    dxl.torqueOff(ID_EPAULE);
+    dxl.setOperatingMode(ID_EPAULE, mode);
+    dxl.torqueOn(ID_EPAULE);
 
-  dxl.torqueOff(ID_POIGNET);
-  dxl.setOperatingMode(ID_POIGNET, mode);
-  dxl.torqueOn(ID_POIGNET);
+    dxl.torqueOff(ID_POIGNET);
+    dxl.setOperatingMode(ID_POIGNET, mode);
+    dxl.torqueOn(ID_POIGNET);
+  }
 }
 
 void calibration(){
@@ -356,7 +357,7 @@ void taskCommInterface(void const *pvParameters)
     }
 
     ////// Envoi à l'interface //////
-    Serial.println( String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle -40) + "," + String(exo_temp.epaule.angle) + "," +
+    Serial.println( String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
                    String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque) + "," + String(exo_temp.poignet.velocite) +
                    "," + String(exo_temp.coude.velocite) + "," + String(exo_temp.epaule.velocite) + "," + String(exo_temp.poignet.goalPWM) +
                    "," + String(exo_temp.coude.goalPWM) + "," + String(exo_temp.epaule.goalPWM) );
@@ -452,9 +453,9 @@ const float r_moteur = 15; // TO DO : à définir
 //   }
   // Lecture des données actuelles des moteurs
   // Lecture du goalPWM fait dans la calibration
-  exo_temp.poignet.angle = (dxl.getPresentPosition(ID_POIGNET, UNIT_DEGREE) + zero_offset_poignet);//*3.15415592/180;
-  exo_temp.coude.angle = (dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) + zero_offset_coude);//*3.15415592/180;
-  exo_temp.epaule.angle = (dxl.getPresentPosition(ID_EPAULE, UNIT_DEGREE) + zero_offset_epaule);//*3.15415592/180;
+  exo_temp.poignet.angle = (dxl.getPresentPosition(ID_POIGNET, UNIT_DEGREE) - zero_offset_poignet);//*3.15415592/180;
+  exo_temp.coude.angle = (dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) - zero_offset_coude);//*3.15415592/180;
+  exo_temp.epaule.angle = (dxl.getPresentPosition(ID_EPAULE, UNIT_DEGREE) - zero_offset_epaule);//*3.15415592/180;
 
 
   exo_temp.poignet.velocite = dxl.getPresentVelocity(ID_POIGNET, UNIT_RPM);
