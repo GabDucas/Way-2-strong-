@@ -178,18 +178,23 @@ void moteurs_controls( void const *pvParameters)
       xSemaphoreGive(mutex_data);
     }
     // runmode_temp = ANTI_GRATIVE;
-    if(runmode_temp != runmode_temp_prev || runmode_temp == MANUEL)
+    if(runmode_temp != runmode_temp_prev || runmode_temp == MANUEL || runmode_temp == CALIBRATION)
     {
       switch(runmode_temp)
       {
         case E_STOP:
-          //THINGS
+          dxl.torqueOff(ID_COUDE);
+          dxl.torqueOff(ID_POIGNET);
+          dxl.torqueOff(ID_EPAULE);
         break;
 
         case MANUEL:
           if(exo_temp.epaule.commandeMoteur != commande_prev_epaule || exo_temp.coude.commandeMoteur != commande_prev_coude || exo_temp.poignet.commandeMoteur != commande_prev_poignet )
           {
             set_mode(OP_EXTENDED_POSITION);
+            dxl.setGoalPWM(ID_EPAULE, 500);
+            dxl.setGoalPWM(ID_COUDE, 500);
+            dxl.setGoalPWM(ID_POIGNET, 500);
             set_PosGoal_deg(ID_COUDE, -exo_temp.coude.commandeMoteur + zero_offset_coude);
             set_PosGoal_deg(ID_EPAULE, -exo_temp.epaule.commandeMoteur + zero_offset_epaule);
             set_PosGoal_deg(ID_POIGNET, -exo_temp.poignet.commandeMoteur + zero_offset_poignet);
@@ -197,13 +202,19 @@ void moteurs_controls( void const *pvParameters)
         break;
         
         case ANTI_GRATIVE:
-          calibration();
           anti_gravite();
+        break;
+
+        case 3:
+          calibration();
         break;
 
 
         case STATIQUE:
           set_mode(OP_EXTENDED_POSITION);
+          dxl.setGoalPWM(ID_EPAULE, 500);
+          dxl.setGoalPWM(ID_COUDE, 500);
+          dxl.setGoalPWM(ID_POIGNET, 500);
           dxl.setGoalPosition(ID_COUDE, dxl.getPresentPosition(ID_COUDE));
           dxl.setGoalPosition(ID_EPAULE, dxl.getPresentPosition(ID_EPAULE));
           dxl.setGoalPosition(ID_POIGNET, dxl.getPresentPosition(ID_POIGNET));
@@ -233,6 +244,9 @@ void set_mode(int mode){
   // NICE TO HAVE:
   // PT FAUT TYPE CAST
   if ((int)dxl.readControlTableItem(OPERATING_MODE,ID_EPAULE) == mode){
+    dxl.torqueOn(ID_COUDE);
+    dxl.torqueOn(ID_EPAULE);
+    dxl.torqueOn(ID_POIGNET);
     return;
   }
   else{
@@ -357,7 +371,7 @@ void taskCommInterface(void const *pvParameters)
     }
 
     ////// Envoi à l'interface //////
-    Serial.println( String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
+    Serial.println(String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
                    String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque) + "," + String(exo_temp.poignet.velocite) +
                    "," + String(exo_temp.coude.velocite) + "," + String(exo_temp.epaule.velocite) + "," + String(exo_temp.poignet.goalPWM) +
                    "," + String(exo_temp.coude.goalPWM) + "," + String(exo_temp.epaule.goalPWM) );
@@ -369,12 +383,8 @@ void taskCommInterface(void const *pvParameters)
       message = Serial.readStringUntil('\n');
 
       //Défini le runmode en fonction du message envoyé par l'interface. Format: b'(mode),commandePoignet,commandeCoude,commandeEpaule
-      if(message.charAt(0) == '0')
-        runmode_temp = 0;
-      else if(message.charAt(0) == '1')
-        runmode_temp = 1;
-     else if(message.charAt(0) == '2')
-        runmode_temp = 2;
+      runmode_temp = (int)message.charAt(0) - 48;
+
 
       // Si mode manuel activé, traverse chaque lettre du message afin de lire la commande. 
       if (runmode_temp == 1)

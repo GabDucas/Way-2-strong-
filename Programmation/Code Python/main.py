@@ -23,7 +23,7 @@ torqueEpaule = 0
 torqueCoude = 0
 torquePoignet = 0
 
-mode_moteur = 2
+mode_moteur = 42
 
 commandeMoteur = ""
 ancienneCommandeMoteur = "commande de moteur"
@@ -123,8 +123,6 @@ class RealTimePlot(QMainWindow):
 
 
             self.plotGraph.plot([x for x, _ in self.data], [y for _, y in self.data], pen=self.pen)
-            #print(self.data.__getitem__(3))
-            print(anglePoignetRad)
             self.data.clear()
 
 
@@ -145,6 +143,8 @@ class Application(customtkinter.CTk):
 
         super().__init__(*args, **kwargs)
 
+        back_color = "gray18"
+
         self.title('Exosquelette')
         self.geometry('1400X1000')
 
@@ -154,31 +154,41 @@ class Application(customtkinter.CTk):
         self.LabelTitre = customtkinter.CTkLabel(master=self, font = ("Helvetica", 24), text="Panneau de contrôle")
         self.LabelTitre.grid(row=0, column=0, columnspan=2)
 
-        self.frameGauche = customtkinter.CTkFrame(self)
-        self.frameGauche.grid(row=1, column=0)
+        self.frameGauche = customtkinter.CTkFrame(self, fg_color=back_color)
+        self.frameGauche.grid(row=1, column=0, padx=10, pady=10)
 
-        self.frameDroit = customtkinter.CTkFrame(self)
-        self.frameDroit.grid(row=1, column=1)
+        self.frameDroit = customtkinter.CTkFrame(self, fg_color=back_color)
+        self.frameDroit.grid(row=1, column=1, padx=10, pady=10)
 
         ## Frame Gauche
-        self.frameGauche_Haut = customtkinter.CTkFrame(self.frameGauche)
-        self.frameGauche_Haut.grid(row=0, column=0)
+        self.frameGauche_Haut = customtkinter.CTkFrame(self.frameGauche, fg_color=back_color)
+        self.frameGauche_Haut.grid(row=0, column=0, padx=10, pady=10)
 
-        self.frameGauche_Bas = customtkinter.CTkFrame(self.frameGauche)
-        self.frameGauche_Bas.grid(row=1, column=0)
+        self.frameGauche_Bas = customtkinter.CTkFrame(self.frameGauche, fg_color=back_color)
+        self.frameGauche_Bas.grid(row=1, column=0, padx=10, pady=10)
 
         # Frame Gauche Haut (Choix des modes)
         self.labelMode = customtkinter.CTkLabel(master=self.frameGauche_Haut, font=("Helvetica", 16), text="Mode : ")
 
         check_var_Anti = customtkinter.StringVar(value="Off")
-        self.checkAntigrav = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Anti-Gravité", variable=check_var_Anti, onvalue=1, offvalue=2)
+        self.checkAntigrav = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Anti-Gravité", onvalue=1, offvalue=0, border_color="White", hover_color="White", fg_color="White")
 
         check_var_Manuel = customtkinter.StringVar(value="Off")
-        self.checkManuel = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Manuel", variable=check_var_Manuel, onvalue=1, offvalue=2)
+        self.checkManuel = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Manuel", onvalue=1, offvalue=2,
+                                                    border_color="White",
+                                                     hover_color="White", fg_color="White")
 
-        self.labelMode.grid(row=0, column=0)
-        self.checkAntigrav.grid(row=1, column=0)
-        self.checkManuel.grid(row=2, column=0)
+        check_var_Stat = customtkinter.StringVar(value="Off")
+        self.checkStat = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Statique", onvalue=1, offvalue=0,
+                                                    border_color="White",
+                                                   hover_color="White", fg_color="White")
+
+        self.boutonCalib = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Calibration", command=self.commandeCalibration)
+        self.boutonCalib.grid(row=4,column=0,padx=15,pady=15)
+        self.labelMode.grid(row=0, column=0, padx=5, pady=5)
+        self.checkAntigrav.grid(row=1, column=0, padx=5, pady=5)
+        self.checkManuel.grid(row=2, column=0, padx=5, pady=5)
+        self.checkStat.grid(row=3, column=0, padx=5, pady=5)
 
 
         # Frame Gauche Bas (Envoi de commande)
@@ -190,34 +200,34 @@ class Application(customtkinter.CTk):
         self.labelEpauleCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16),
                                                            text="Épaule :")
 
-        self.valeurPoignetEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=100)
-        self.valeurCoudeEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=100)
-        self.valeurEpauleEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=100)
+        self.valeurPoignetEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=75, fg_color="White",
+                                                         text_color="Black")
+        self.valeurCoudeEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=75, fg_color="White",
+                                                       text_color="Black")
+        self.valeurEpauleEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=75, fg_color="White",
+                                                        text_color="Black")
 
         self.boutonMoteur = customtkinter.CTkButton(master=self.frameGauche_Bas, text="Envoie Commande",  width=100, command=self.commandeBouton )
 
-        #self.menu = customtkinter.CTkOptionMenu(master=self.frameGauche_Bas, values=["Poignet", "Coude", "Épaule", "Tous les moteurs"])
-        #self.menu.set("Choix moteur")
-        #self.menu.grid(row=1, column=0, padx=20, pady=20)
-
         self.labelEnvoieCommande.grid(row=0, column=0, columnspan=4)
-
-        self.labelPoignetCommande.grid(row=1,column=0)
-        self.labelCoudeCommande.grid(row=1, column=1)
-        self.labelEpauleCommande.grid(row=1, column=2)
-
-        self.valeurPoignetEntry.grid(row=2, column=0)
-        self.valeurCoudeEntry.grid(row=2, column=1)
-        self.valeurEpauleEntry.grid(row=2, column=2)
 
         self.boutonMoteur.grid(row=2, column=3)
 
-        ## Frame Droit
-        self.frameDroit_Haut = customtkinter.CTkFrame(self.frameDroit)
-        self.frameDroit_Haut.grid(row=0, column=0)
+        self.labelPoignetCommande.grid(row=1, column=0, padx=5)
+        self.labelCoudeCommande.grid(row=1, column=1, padx=5)
+        self.labelEpauleCommande.grid(row=1, column=2, padx=5)
 
-        self.frameDroit_bas = customtkinter.CTkFrame(self.frameDroit)
-        self.frameDroit_bas.grid(row=1, column=0)
+        self.valeurPoignetEntry.grid(row=2, column=0, padx=5)
+        self.valeurCoudeEntry.grid(row=2, column=1, padx=5)
+        self.valeurEpauleEntry.grid(row=2, column=2, padx=5)
+
+        self.frameDroit_Haut = customtkinter.CTkFrame(self.frameDroit, fg_color=back_color)
+        self.frameDroit_Haut.grid(row=0, column=0, padx=5, pady=5)
+
+        self.frameDroit_bas = customtkinter.CTkFrame(self.frameDroit, fg_color=back_color)
+        self.frameDroit_bas.grid(row=1, column=0, padx=5, pady=5)
+
+        ## Frame Droit
 
         # Frame Droit Haut (Affichage des valeurs en temps réel)
         self.labelAngle = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Angle")
@@ -241,27 +251,30 @@ class Application(customtkinter.CTk):
 
         self.valeurTemps = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0", pady=20)
 
-        self.labelAngle.grid(row=0, column=1)
-        self.labelCouple.grid(row=0, column=2)
+        self.labelAngle.grid(row=0, column=1, padx=8)
+        self.labelCouple.grid(row=0, column=2, padx=8)
 
-        self.valeurLabelPoignet.grid(row=1, column=0)
-        self.valeurAnglePoignet.grid(row=1, column=1)
-        self.valeurCouplePoignet.grid(row=1, column=2)
+        self.valeurLabelPoignet.grid(row=1, column=0, padx=8)
+        self.valeurAnglePoignet.grid(row=1, column=1, padx=8)
+        self.valeurCouplePoignet.grid(row=1, column=2, padx=8)
 
-        self.valeurLabelCoude.grid(row=2, column=0)
-        self.valeurAngleCoude.grid(row=2, column=1)
-        self.valeurCoupleCoude.grid(row=2, column=2)
+        self.valeurLabelCoude.grid(row=2, column=0, padx=10)
+        self.valeurAngleCoude.grid(row=2, column=1, padx=10)
+        self.valeurCoupleCoude.grid(row=2, column=2, padx=10)
 
-        self.valeurLabelEpaule.grid(row=3, column=0)
-        self.valeurAngleEpaule.grid(row=3, column=1)
-        self.valeurCoupleEpaule.grid(row=3, column=2)
+        self.valeurLabelEpaule.grid(row=3, column=0, padx=10)
+        self.valeurAngleEpaule.grid(row=3, column=1, padx=10)
+        self.valeurCoupleEpaule.grid(row=3, column=2, padx=10)
 
         self.labelTemps.grid(row=4, column=0)
         self.valeurTemps.grid(row=4, column=1)
 
-        # Frame Droit Bas (Bouton d'arrêt)
-        self.boutonArret = customtkinter.CTkButton(self.frameDroit_bas, text="Bouton d'arrêt", font=("Helvetica", 1),
-                                                   width=150, height=150, corner_radius=150)
+        self.boutonArret = customtkinter.CTkButton(self.frameDroit_bas, text="Bouton d'arrêt", font=("Helvetica", 12),command=self.commandeArret,
+                                                   width=120, height=120, corner_radius=150,
+                                                   fg_color="red2", hover_color="DarkRed")
+
+
+
         self.boutonArret.grid(row=0,column=0)
 
         threadUpdate = threading.Thread(target=self.set_valeur).start()
@@ -286,9 +299,35 @@ class Application(customtkinter.CTk):
             self.valeurCoupleEpaule.configure(text=str(torqueEpaule))
             self.valeurTemps.configure(text=str(temps))
 
-            mode_moteur = self.checkManuel.get()
+            if (self.checkManuel.get() == 1):
+                mode_moteur = 1
+            elif (self.checkAntigrav.get() == 1):
+                mode_moteur = 2
+            elif (self.checkStat.get() == 1):
+                mode_moteur = 3
 
 
+
+    def commandeArret(self):
+        global commandeMoteur
+        global ancienneCommandeMoteur
+        global commandeAEnvoyer
+
+        commandeMoteur = "0,0,0,0"
+        commandeAEnvoyer = True
+        ancienneCommandeMoteur = commandeMoteur
+        print(commandeMoteur)
+
+
+    def commandeCalibration(self):
+        global commandeMoteur
+        global ancienneCommandeMoteur
+        global commandeAEnvoyer
+
+        commandeMoteur = "3,0,0,0"
+        commandeAEnvoyer = True
+        ancienneCommandeMoteur = commandeMoteur
+        print(commandeMoteur)
 
 
     def commandeBouton(self):
@@ -297,6 +336,7 @@ class Application(customtkinter.CTk):
         global ancienneCommandeMoteur
         global commandeAEnvoyer
         with lock:
+
             commandeAEnvoyer = True
             commandePoignetMoteur = self.valeurPoignetEntry.get()
             if commandePoignetMoteur == "":
