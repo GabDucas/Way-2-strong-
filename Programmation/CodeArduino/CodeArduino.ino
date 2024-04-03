@@ -80,6 +80,9 @@ void taskCalculTorque(void *pvParameters);
 osThreadId thread_id_interface;
 osThreadId thread_id_update;
 osThreadId thread_id_moteurs_controls;
+//osThreadId thread_id_anti_gravite;
+
+//TaskHandle_t antigravite_loop;
 
 void setup()
 {
@@ -132,9 +135,10 @@ void setup()
   // osThreadDef(update, updateExo, osPriorityBelowNormal,0,2056);
   //osThreadDef(ttestt, test, osPriorityNormal,0,2056);//changer test pour machine état moteurs
   osThreadDef(moving_moteurs, moteurs_controls, osPriorityAboveNormal,0,2056);//changer test pour machine état moteurs PRIORITÉ BASSE 
-
+  // osThreadDef(antigravite_loop, anti_graviteV2, osPriorityLow, 0, 2056);
   thread_id_moteurs_controls = osThreadCreate(osThread(moving_moteurs), NULL);
   thread_id_interface = osThreadCreate(osThread(interface), NULL);
+  // thread_id_anti_gravite = osThreadCreate(osThread(antigravite_loop), NULL);
   // thread_id_update = osThreadCreate(osThread(update), NULL);
   //thread_id_test = osThreadCreate(osThread(ttestt), NULL);
 
@@ -167,6 +171,8 @@ void moteurs_controls( void const *pvParameters)
   float commande_prev_coude = 15000.0;
   float commande_prev_poignet = 15000.0;
 
+  int state = 0;
+
   for(;;)
   {
     start=osKernelSysTick();
@@ -178,7 +184,7 @@ void moteurs_controls( void const *pvParameters)
       xSemaphoreGive(mutex_data);
     }
     // runmode_temp = ANTI_GRATIVE;
-    if(runmode_temp != runmode_temp_prev || runmode_temp == MANUEL || runmode_temp == CALIBRATION)
+    if(runmode_temp != runmode_temp_prev || runmode_temp == MANUEL || runmode_temp == ANTI_GRATIVE)
     {
       switch(runmode_temp)
       {
@@ -202,10 +208,36 @@ void moteurs_controls( void const *pvParameters)
         break;
         
         case ANTI_GRATIVE:
+          // if (runmode_temp != runmode_temp_prev)
+          // {
+          //   set_mode(OP_VELOCITY);
+          //   dxl.setGoalVelocity(ID_EPAULE,0);
+          //   dxl.setGoalVelocity(ID_COUDE,0);
+          //   dxl.setGoalVelocity(ID_POIGNET,0);
+          //   dxl.setGoalPWM(ID_EPAULE, exo_temp.epaule.goalPWM);
+          //   dxl.setGoalPWM(ID_COUDE, exo_temp.coude.goalPWM);
+          //   dxl.setGoalPWM(ID_POIGNET, exo_temp.poignet.goalPWM);
+          // }
+
+          // if ( state == 0 && (exo_temp.poignet.goalPWM>=abs(dxl.getPresentPWM(ID_POIGNET)) || exo_temp.coude.goalPWM>=abs(dxl.getPresentPWM(ID_COUDE)) || exo_temp.epaule.goalPWM>=abs(dxl.getPresentPWM(ID_EPAULE))))
+          // {
+          //   // Serial.println("TU PUEEEE");
+          //   state = 1;
+          //   // dxl.setGoalPWM(ID_EPAULE, exo_temp.epaule.goalPWM/5);
+          //   // dxl.setGoalPWM(ID_COUDE, exo_temp.coude.goalPWM/5);
+          //   // dxl.setGoalPWM(ID_POIGNET, exo_temp.poignet.goalPWM/5);
+          // }
+          // if ( state == 1 && abs(dxl.getPresentVelocity(ID_POIGNET)) <= 0.1 && abs(dxl.getPresentVelocity(ID_COUDE)) <= 0.1 && abs(dxl.getPresentVelocity(ID_EPAULE)) <= 0.1 )
+          // {
+          //   state = 0;
+          //   dxl.setGoalPWM(ID_EPAULE, exo_temp.epaule.goalPWM);
+          //   dxl.setGoalPWM(ID_COUDE, exo_temp.coude.goalPWM);
+          //   dxl.setGoalPWM(ID_POIGNET, exo_temp.poignet.goalPWM);
+          // }
           anti_gravite();
         break;
 
-        case 3:
+        case CALIBRATION:
           calibration();
         break;
 
@@ -234,8 +266,13 @@ void moteurs_controls( void const *pvParameters)
     commande_prev_coude = exo_temp.coude.commandeMoteur;
     commande_prev_poignet = exo_temp.poignet.commandeMoteur;
    
-    
-    end=osKernelSysTick();
+    // Serial.print(" EPAULE: ");
+    // Serial.print(dxl.getPresentPWM(ID_EPAULE));
+    // Serial.print(" COUDE: ");
+    // Serial.print(dxl.getPresentPWM(ID_COUDE));
+    // Serial.print(" POIGNET: ");
+    // Serial.println(dxl.getPresentPWM(ID_POIGNET));
+
     osDelay(pdMS_TO_TICKS(500));
   }
 }
@@ -266,7 +303,7 @@ void set_mode(int mode){
 }
 
 void calibration(){
-  int N_moyenne = 10;
+  int N_moyenne = 20;
   float PWM_epaule = 0.0;
   float PWM_coude = 0.0;
   float PWM_poignet = 0.0;
@@ -279,7 +316,7 @@ void calibration(){
   set_PosGoal_deg(ID_EPAULE, zero_offset_epaule);//VALEUR POUR 90 deg TODO: REDEFINIR 0 COMME 90 DEG
   set_PosGoal_deg(ID_COUDE, zero_offset_coude);//VALEUR POUR 90 deg 
   set_PosGoal_deg(ID_POIGNET, zero_offset_poignet);//VALEUR POUR 90 deg 
-  delay(500);
+  delay(5000);
 
   for (int i = 0; i<N_moyenne ; i++)
   {
@@ -287,31 +324,81 @@ void calibration(){
     PWM_coude += dxl.getPresentPWM(ID_COUDE);
     PWM_poignet += dxl.getPresentPWM(ID_POIGNET);
     //DEBUG_SERIAL.println(dxl.getPresentPWM(ID_EPAULE));
-    delay(200);
+    delay(100);
   }
   max_PWM_epaule = abs(PWM_epaule/N_moyenne);
   max_PWM_coude = abs(PWM_coude/N_moyenne);
   max_PWM_poignet = abs(PWM_poignet/N_moyenne);
 
+  Serial.print(" ##############EPAULE##############: ");
+  Serial.print(max_PWM_epaule);
+  Serial.print(" COUDE: ");
+  Serial.print(max_PWM_coude);
+  Serial.print(" POIGNET: ");
+  Serial.println(max_PWM_poignet);
+  
   if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
   {
-    exo.poignet.goalPWM = max_PWM_poignet;
-    exo.coude.goalPWM = max_PWM_coude;
-    exo.epaule.goalPWM = max_PWM_epaule;
+    exo.poignet.goalPWM = max_PWM_poignet+2;
+    exo.coude.goalPWM = max_PWM_coude+2;
+    exo.epaule.goalPWM = max_PWM_epaule+2;
     xSemaphoreGive(mutex_data);
   }
 }
+// void anti_graviteV2( void const *pvParameters)
+// {
+//   (void) pvParameters;
+//   int state = 0; // 0 = static, 1 = moving
+//   uint16_t runmode_temp;
+//   uint16_t ulNotifiedValue;
+//   exoSquelette exo_temp;
+//   for(;;)
+//   {
+//     if( xSemaphoreTake(mutex_data,15) == pdTRUE ) 
+//     {
+//       exo_temp = exo;
+//       runmode_temp = runmode;
+//       xSemaphoreGive(mutex_data);
+//     }
+//     if ( runmode_temp == 2) // ANTI_GRAVITE
+//     {
+//       if ( state == 0 && (exo_temp.poignet.goalPWM>=0.99*dxl.getPresentPWM(ID_POIGNET) || exo_temp.coude.goalPWM>=0.99*dxl.getPresentPWM(ID_COUDE) || exo_temp.epaule.goalPWM>=0.99*dxl.getPresentPWM(ID_EPAULE) ) )
+//       {
+//         state = 1;
+//         dxl.setGoalPWM(ID_EPAULE, exo_temp.epaule.goalPWM/3);
+//         dxl.setGoalPWM(ID_COUDE, exo_temp.coude.goalPWM/3);
+//         dxl.setGoalPWM(ID_POIGNET, exo_temp.poignet.goalPWM/3);
+//       }
+//       if ( state == 1 && dxl.getPresentVelocity(ID_POIGNET) <= 0.1 && dxl.getPresentVelocity(ID_COUDE) <= 0.1 && dxl.getPresentVelocity(ID_EPAULE) <= 0.1 )
+//       {
+//         state = 0;
+//         dxl.setGoalPWM(ID_EPAULE, exo_temp.epaule.goalPWM);
+//         dxl.setGoalPWM(ID_COUDE, exo_temp.coude.goalPWM);
+//         dxl.setGoalPWM(ID_POIGNET, exo_temp.poignet.goalPWM);
+//       }
+//     }
+//     else
+//     {
+//       dxl.setGoalPWM(ID_EPAULE, exo_temp.epaule.goalPWM);
+//       dxl.setGoalPWM(ID_COUDE, exo_temp.coude.goalPWM);
+//       dxl.setGoalPWM(ID_POIGNET, exo_temp.poignet.goalPWM);
+//       ulTaskNotifyTake( pdTRUE,portMAX_DELAY ); /* Block indefinitely. */
+//     }
+//     osDelay(pdMS_TO_TICKS(50));
+//   }
+// }
 
 void anti_gravite(){
   set_mode(OP_VELOCITY);
+  // FAIRE UN MUTEX ET PRENDRE LES PWM DE L'EXO
 
-  dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule+5);
+  dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule);
   dxl.setGoalVelocity(ID_EPAULE, 0);
 
-  dxl.setGoalPWM(ID_COUDE, max_PWM_coude+5);
+  dxl.setGoalPWM(ID_COUDE, max_PWM_coude);
   dxl.setGoalVelocity(ID_COUDE, 0);
 
-  dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet+5);
+  dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet);
   dxl.setGoalVelocity(ID_POIGNET, 0);
 }
 
@@ -371,10 +458,10 @@ void taskCommInterface(void const *pvParameters)
     }
 
     ////// Envoi à l'interface //////
-    Serial.println(String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
-                   String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque) + "," + String(exo_temp.poignet.velocite) +
-                   "," + String(exo_temp.coude.velocite) + "," + String(exo_temp.epaule.velocite) + "," + String(exo_temp.poignet.goalPWM) +
-                   "," + String(exo_temp.coude.goalPWM) + "," + String(exo_temp.epaule.goalPWM) );
+    // Serial.println(String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
+    //                String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque) + "," + String(exo_temp.poignet.velocite) +
+    //                "," + String(exo_temp.coude.velocite) + "," + String(exo_temp.epaule.velocite) + "," + String(exo_temp.poignet.goalPWM) +
+    //                "," + String(exo_temp.coude.goalPWM) + "," + String(exo_temp.epaule.goalPWM) );
     
     exo_temp = updateExo(exo_temp);
     ////// Réception de l'interface //////
