@@ -511,14 +511,14 @@ bool set_PosGoal_deg(const uint8_t ID, float goal){
       goal = -89.0 + zero_offset_epaule;
   }
   
-  if(ID == ID_COUDE)
-  {
-    if(goal - zero_offset_coude > 110.0)//TODO: JSP L'ANGLE À VERIF
-      goal = 110.0 + zero_offset_coude;
+  // if(ID == ID_COUDE)
+  // {
+  //   // if(goal - zero_offset_coude > 110.0)//TODO: JSP L'ANGLE À VERIF
+  //   //  goal = 110.0 + zero_offset_coude;
 
-    // if(goal - zero_offset_coude < zero_offset_coude)
-    //   goal = zero_offset_coude;
-  }
+  //   if(goal + zero_offset_coude < 0)
+  //     goal = zero_offset_coude;
+  // }
 
   if(ID == ID_POIGNET)
   {
