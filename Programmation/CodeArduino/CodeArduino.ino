@@ -395,9 +395,9 @@ void moteurs_controls( void const *pvParameters)
         if(first)
         {
           set_mode(OP_EXTENDED_POSITION);
-          dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule + 150);
-          dxl.setGoalPWM(ID_COUDE, max_PWM_coude + 150);
-          dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet + 150);
+          dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule + 200);
+          dxl.setGoalPWM(ID_COUDE, max_PWM_coude + 200);
+          dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet + 200);
 
           set_PosGoal_deg(ID_EPAULE, 80 + zero_offset_epaule);
           set_PosGoal_deg(ID_POIGNET, zero_offset_poignet);
@@ -410,20 +410,25 @@ void moteurs_controls( void const *pvParameters)
           dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 30);
           dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 30);
           dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 30);
-        }
 
-        if(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) - zero_offset_coude >= 0)
-        {
-          set_PosGoal_deg(ID_COUDE, -100 + zero_offset_coude);
-          set_PosGoal_deg(ID_POIGNET, -74 + zero_offset_poignet);
-          set_PosGoal_deg(ID_EPAULE, -80 + zero_offset_epaule);
+          count_curls = 0;
         }
-        else if(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) - zero_offset_coude <= -90)
+        if(count_curls*delay_task >= wait)
         {
-          set_PosGoal_deg(ID_COUDE, zero_offset_coude);
-          set_PosGoal_deg(ID_POIGNET, zero_offset_poignet);
-          set_PosGoal_deg(ID_EPAULE, 80 + zero_offset_epaule);
+          if(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) - zero_offset_coude >= 0)
+          {
+            set_PosGoal_deg(ID_COUDE, -100 + zero_offset_coude);
+            set_PosGoal_deg(ID_POIGNET, -74 + zero_offset_poignet);
+            set_PosGoal_deg(ID_EPAULE, -80 + zero_offset_epaule);
+          }
+          else if(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) - zero_offset_coude <= -90)
+          {
+            set_PosGoal_deg(ID_COUDE, zero_offset_coude);
+            set_PosGoal_deg(ID_POIGNET, zero_offset_poignet);
+            set_PosGoal_deg(ID_EPAULE, 80 + zero_offset_epaule);
+          }
         }
+        count_curls++;
         break;
 
         case STATIQUE:
