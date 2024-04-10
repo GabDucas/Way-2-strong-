@@ -381,9 +381,9 @@ def gestionPortSerie():
     global angleCoude
     global angleEpaule
     global anglePoignet
-    global torqueCoude
-    global torqueEpaule
-    global torquePoignet
+    global vitesseCoude
+    global vitesseEpaule
+    global vitessePoignet
 
     global commandeAEnvoyer
 
