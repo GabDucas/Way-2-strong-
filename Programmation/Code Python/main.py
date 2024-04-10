@@ -170,25 +170,31 @@ class Application(customtkinter.CTk):
         # Frame Gauche Haut (Choix des modes)
         self.labelMode = customtkinter.CTkLabel(master=self.frameGauche_Haut, font=("Helvetica", 16), text="Mode : ")
 
-        check_var_Anti = customtkinter.StringVar(value="Off")
-        self.checkAntigrav = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Anti-Gravité", onvalue=1, offvalue=0, border_color="White", hover_color="White", fg_color="White")
-
-        check_var_Manuel = customtkinter.StringVar(value="Off")
+        #check_var_Manuel = customtkinter.StringVar(value="Off")
         self.checkManuel = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Manuel", onvalue=1, offvalue=2,
-                                                    border_color="White",
+                                                     border_color="White",
                                                      hover_color="White", fg_color="White")
 
-        check_var_Stat = customtkinter.StringVar(value="Off")
-        self.checkStat = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Statique", onvalue=1, offvalue=0,
-                                                    border_color="White",
-                                                   hover_color="White", fg_color="White")
+        self.boutonStatique = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Statique", command=self.commandeStatique)
+        self.boutonAntigrav = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Anti-gravité", command=self.commandeAntigrav)
+        self.boutonCurl = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Curl", command=self.commandeCurl)
+
+        #check_var_Anti = customtkinter.StringVar(value="Off")
+        #self.checkAntigrav = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Anti-Gravité", onvalue=1, offvalue=0, border_color="White", hover_color="White", fg_color="White")
+
+        #check_var_Stat = customtkinter.StringVar(value="Off")
+        #self.checkStat = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Statique", onvalue=1, offvalue=0,
+        #                                            border_color="White",
+        #                                           hover_color="White", fg_color="White")
 
         self.boutonCalib = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Calibration", command=self.commandeCalibration)
-        self.boutonCalib.grid(row=4,column=0,padx=15,pady=15)
-        self.labelMode.grid(row=0, column=0, padx=5, pady=5)
-        self.checkAntigrav.grid(row=1, column=0, padx=5, pady=5)
-        self.checkManuel.grid(row=2, column=0, padx=5, pady=5)
-        self.checkStat.grid(row=3, column=0, padx=5, pady=5)
+
+        self.labelMode.grid(row=0, column=0, padx=10, pady=10)
+        self.checkManuel.grid(row=1, column=0, padx=7, pady=7)
+        self.boutonCalib.grid(row=2,column=0,padx=5,pady=5)
+        self.boutonAntigrav(row=3, column=0, padx=5, pady=5)
+        self.boutonCurl.grid(row=4, column=0, padx=5, pady=5)
+        self.boutonStatique.grid(row=5, column=0, padx=5, pady=5)
 
 
         # Frame Gauche Bas (Envoi de commande)
@@ -269,11 +275,10 @@ class Application(customtkinter.CTk):
         self.labelTemps.grid(row=4, column=0)
         self.valeurTemps.grid(row=4, column=1)
 
+        # Frame Droit Bas (Bouton d'arrêt)
         self.boutonArret = customtkinter.CTkButton(self.frameDroit_bas, text="Bouton d'arrêt", font=("Helvetica", 12),command=self.commandeArret,
                                                    width=120, height=120, corner_radius=150,
                                                    fg_color="red2", hover_color="DarkRed")
-
-
 
         self.boutonArret.grid(row=0,column=0)
 
@@ -316,7 +321,15 @@ class Application(customtkinter.CTk):
         commandeMoteur = "0,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
-        print(commandeMoteur)
+
+    def commandeAntigrav(self):
+        global commandeMoteur
+        global ancienneCommandeMoteur
+        global commandeAEnvoyer
+
+        commandeMoteur = "2,0,0,0"
+        commandeAEnvoyer = True
+        ancienneCommandeMoteur = commandeMoteur
 
 
     def commandeCalibration(self):
@@ -327,7 +340,24 @@ class Application(customtkinter.CTk):
         commandeMoteur = "3,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
-        print(commandeMoteur)
+
+    def commandeStatique(self):
+        global commandeMoteur
+        global ancienneCommandeMoteur
+        global commandeAEnvoyer
+
+        commandeMoteur = "4,0,0,0"
+        commandeAEnvoyer = True
+        ancienneCommandeMoteur = commandeMoteur
+
+    def commandeCurl(self):
+        global commandeMoteur
+        global ancienneCommandeMoteur
+        global commandeAEnvoyer
+
+        commandeMoteur = "5,0,0,0"
+        commandeAEnvoyer = True
+        ancienneCommandeMoteur = commandeMoteur
 
 
     def commandeBouton(self):
@@ -347,7 +377,7 @@ class Application(customtkinter.CTk):
             commandeEpauleMoteur = self.valeurEpauleEntry.get()
             if commandeEpauleMoteur == "":
                 commandeEpauleMoteur = 0
-            commandeMoteur = str(mode_moteur) + "," + str(commandePoignetMoteur) + "," + str(commandeCoudeMoteur)+ "," + str(commandeEpauleMoteur)
+            commandeMoteur = "1" + "," + str(commandePoignetMoteur) + "," + str(commandeCoudeMoteur)+ "," + str(commandeEpauleMoteur)
             ancienneCommandeMoteur = commandeMoteur
 
 #Permet de lançer le graph dans un autre thread
