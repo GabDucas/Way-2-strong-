@@ -19,9 +19,9 @@ angleEpaule = 0
 angleCoude = 0
 anglePoignet = 0
 
-torqueEpaule = 0
-torqueCoude = 0
-torquePoignet = 0
+vitesseEpaule = 0
+vitesseCoude = 0
+vitessePoignet = 0
 
 mode_moteur = 42
 
@@ -37,7 +37,7 @@ class gestionPort():
     #Initialiser le port série
     def __init__(self):
         self.stringAngles = [0,0,0,0,0,0,0]
-        self.serial_port = serial.Serial('COM8', 9600, timeout=1)
+        self.serial_port = serial.Serial('COM3', 9600, timeout=1)
         self.serial_port.flush()
     def lireValeurs(self) -> []:
         if self.serial_port.in_waiting > 0:
@@ -85,7 +85,7 @@ class RealTimePlot(QMainWindow):
 
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update_plot)
-        self.timer.start(200)  # Update plot every ___ milliseconds
+        self.timer.start(40)  # Update plot every ___ milliseconds
 
     def update_plot(self):
 
@@ -135,9 +135,9 @@ class Application(customtkinter.CTk):
     global angleEpaule
     global angleCoude
     global anglePoignet
-    global torqueEpaule
-    global torqueCoude
-    global torquePoignet
+    global vitesseEpaule
+    global vitesseCoude
+    global vitessePoignet
 
     def __init__(self, *args, **kwargs):
 
@@ -178,14 +178,6 @@ class Application(customtkinter.CTk):
         self.boutonStatique = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Statique", command=self.commandeStatique)
         self.boutonAntigrav = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Anti-gravité", command=self.commandeAntigrav)
         self.boutonCurl = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Curl", command=self.commandeCurl)
-
-        #check_var_Anti = customtkinter.StringVar(value="Off")
-        #self.checkAntigrav = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Anti-Gravité", onvalue=1, offvalue=0, border_color="White", hover_color="White", fg_color="White")
-
-        #check_var_Stat = customtkinter.StringVar(value="Off")
-        #self.checkStat = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Statique", onvalue=1, offvalue=0,
-        #                                            border_color="White",
-        #                                           hover_color="White", fg_color="White")
 
         self.boutonCalib = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Calibration", command=self.commandeCalibration)
 
@@ -237,7 +229,7 @@ class Application(customtkinter.CTk):
 
         # Frame Droit Haut (Affichage des valeurs en temps réel)
         self.labelAngle = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Angle")
-        self.labelCouple = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Couple")
+        self.labelCouple = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Vitesse")
         self.labelTemps = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Temps")
 
         self.valeurLabelPoignet = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16),
@@ -251,9 +243,9 @@ class Application(customtkinter.CTk):
         self.valeurAngleCoude = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
         self.valeurAngleEpaule = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
 
-        self.valeurCouplePoignet = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
-        self.valeurCoupleCoude = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
-        self.valeurCoupleEpaule = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
+        self.valeurVitessePoignet = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
+        self.valeurVitesseCoude = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
+        self.valeurVitesseEpaule = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
 
         self.valeurTemps = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0", pady=20)
 
@@ -262,15 +254,15 @@ class Application(customtkinter.CTk):
 
         self.valeurLabelPoignet.grid(row=1, column=0, padx=8)
         self.valeurAnglePoignet.grid(row=1, column=1, padx=8)
-        self.valeurCouplePoignet.grid(row=1, column=2, padx=8)
+        self.valeurVitessePoignet.grid(row=1, column=2, padx=8)
 
         self.valeurLabelCoude.grid(row=2, column=0, padx=10)
         self.valeurAngleCoude.grid(row=2, column=1, padx=10)
-        self.valeurCoupleCoude.grid(row=2, column=2, padx=10)
+        self.valeurVitesseCoude.grid(row=2, column=2, padx=10)
 
         self.valeurLabelEpaule.grid(row=3, column=0, padx=10)
         self.valeurAngleEpaule.grid(row=3, column=1, padx=10)
-        self.valeurCoupleEpaule.grid(row=3, column=2, padx=10)
+        self.valeurVitesseEpaule.grid(row=3, column=2, padx=10)
 
         self.labelTemps.grid(row=4, column=0)
         self.valeurTemps.grid(row=4, column=1)
@@ -290,20 +282,20 @@ class Application(customtkinter.CTk):
         global angleEpaule
         global angleCoude
         global anglePoignet
-        global torqueEpaule
-        global torqueCoude
-        global torquePoignet
+        global vitesseEpaule
+        global vitesseCoude
+        global vitessePoignet
         global mode_moteur
 
         while 1:
-            self.valeurAnglePoignet.configure(text=str(anglePoignet))
-            self.valeurAngleCoude.configure(text=str(angleCoude))
-            self.valeurAngleEpaule.configure(text=str(angleEpaule))
-            self.valeurCouplePoignet.configure(text=str(torquePoignet))
-            self.valeurCoupleCoude.configure(text=str(torqueCoude))
-            self.valeurCoupleEpaule.configure(text=str(torqueEpaule))
+            self.valeurAnglePoignet.configure(text=str(anglePoignet*-1))
+            self.valeurAngleCoude.configure(text=str(angleCoude*-1))
+            self.valeurAngleEpaule.configure(text=str(angleEpaule*-1))
+            self.valeurVitessePoignet.configure(text=str(vitessePoignet))
+            self.valeurVitesseCoude.configure(text=str(vitesseCoude))
+            self.valeurVitesseEpaule.configure(text=str(vitesseEpaule))
             self.valeurTemps.configure(text=str(temps))
- 
+
 
     def commandeArret(self):
         global commandeMoteur
@@ -405,9 +397,9 @@ def gestionPortSerie():
             anglePoignet = float(stringAngle[1])
             angleCoude = float(stringAngle[2])
             angleEpaule = float(stringAngle[3])
-            torqueEpaule = float(stringAngle[4])
-            torqueCoude = float(stringAngle[5])
-            torquePoignet = float(stringAngle[6])
+            vitesseEpaule = float(stringAngle[4])
+            vitesseCoude = float(stringAngle[5])
+            vitessePoignet = float(stringAngle[6])
 
 
         if (commandeAEnvoyer == True):
