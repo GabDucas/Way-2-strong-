@@ -210,7 +210,7 @@ void moteurs_controls( void const *pvParameters)
       first = true;
     }
 
-    if(runmode_temp != runmode_temp_prev || runmode_temp == MANUEL || runmode_temp == ANTI_GRATIVE || runmode_temp == CALIBRATION || runmode_temp == STATIQUE || runmode_temp == CURL )
+    if(runmode_temp != E_STOP)// || runmode_temp == MANUEL || runmode_temp == ANTI_GRATIVE || runmode_temp == CALIBRATION || runmode_temp == STATIQUE || runmode_temp == CURL )
     {
       switch(runmode_temp)
       {
@@ -560,7 +560,7 @@ void taskCommInterface(void const *pvParameters)
     }
 
     ////// Envoi à l'interface //////
-    Serial.println(String(millis()/1000) + "," + String(-exo_temp.poignet.angle) + "," + String(-exo_temp.coude.angle) + "," + String(-exo_temp.epaule.angle) + "," +
+    Serial.println(String(millis()/1000) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
                     String(-exo_temp.poignet.velocite) +"," + String(-exo_temp.coude.velocite) + "," + String(-exo_temp.epaule.velocite));
 
     ////// Réception de l'interface //////
