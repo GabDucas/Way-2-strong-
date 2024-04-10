@@ -63,11 +63,11 @@ void setup() {
   dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_COUDE, 5);
   dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_POIGNET, 5);
 
-  dxl.torqueOn(ID_EPAULE);
-  dxl.torqueOn(ID_COUDE);
-  dxl.torqueOn(ID_POIGNET);
+  // dxl.torqueOn(ID_EPAULE);
+  // dxl.torqueOn(ID_COUDE);
+  // dxl.torqueOn(ID_POIGNET);
 
-  calibration();
+  // calibration();
   // anti_gravite();
 
 //POUR METTRE LE 0 NE PAS DECOMMENTÉ
@@ -106,9 +106,9 @@ void setup() {
 void loop() {
 
   DEBUG_SERIAL.print("THETA EPAULE: ");
-  DEBUG_SERIAL.print(dxl.getPresentPosition(ID_EPAULE));
+  DEBUG_SERIAL.print(dxl.getPresentPosition(ID_EPAULE, UNIT_DEGREE));
   DEBUG_SERIAL.print(" THETA COUDE: ");
-  DEBUG_SERIAL.print(dxl.getPresentPosition(ID_COUDE));
+  DEBUG_SERIAL.print(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE));
   DEBUG_SERIAL.print(" THETA POIGNET: ");
   DEBUG_SERIAL.println(dxl.getPresentPosition(ID_POIGNET, UNIT_DEGREE));
 
