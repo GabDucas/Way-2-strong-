@@ -210,7 +210,7 @@ void moteurs_controls( void const *pvParameters)
       first = true;
     }
 
-    if(runmode_temp != runmode_temp_prev || runmode_temp == MANUEL || runmode_temp == ANTI_GRATIVE || runmode_temp == CALIBRATION)
+    if(runmode_temp != runmode_temp_prev || runmode_temp == MANUEL || runmode_temp == ANTI_GRATIVE || runmode_temp == CALIBRATION || runmode_temp == STATIQUE || runmode_temp == CURL )
     {
       switch(runmode_temp)
       {
@@ -395,31 +395,39 @@ void moteurs_controls( void const *pvParameters)
         if(first)
         {
           set_mode(OP_EXTENDED_POSITION);
-          dxl.setGoalPWM(ID_EPAULE, exo_temp.epaule.goalPWM + 500);
-          dxl.setGoalPWM(ID_COUDE, exo_temp.coude.goalPWM + 500);
-          dxl.setGoalPWM(ID_POIGNET, exo_temp.poignet.goalPWM + 500);
+          dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule + 150);
+          dxl.setGoalPWM(ID_COUDE, max_PWM_coude + 150);
+          dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet + 150);
 
-          set_PosGoal_deg(ID_EPAULE, 60 + zero_offset_epaule);
-          set_PosGoal_deg(ID_POIGNET, 0 + zero_offset_poignet);
-          set_PosGoal_deg(ID_COUDE, -90 + zero_offset_coude);
+          set_PosGoal_deg(ID_EPAULE, 80 + zero_offset_epaule);
+          set_PosGoal_deg(ID_POIGNET, zero_offset_poignet);
+          set_PosGoal_deg(ID_COUDE, zero_offset_coude);
 
-          dxl.writeControlTableItem(VELOCITY_LIMIT, ID_EPAULE, 100);
-          dxl.writeControlTableItem(VELOCITY_LIMIT, ID_COUDE, 100);
-          dxl.writeControlTableItem(VELOCITY_LIMIT, ID_POIGNET, 100);
+          dxl.writeControlTableItem(VELOCITY_LIMIT, ID_EPAULE, 30);
+          dxl.writeControlTableItem(VELOCITY_LIMIT, ID_COUDE, 30);
+          dxl.writeControlTableItem(VELOCITY_LIMIT, ID_POIGNET, 30);
 
           dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 30);
           dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 30);
           dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 30);
         }
-          // for(int i=0;i<90;i++)
-          // {
-          //   set_PosGoal_deg(ID_COUDE, -i + zero_offset_coude);
-          //   delay(100);
-          // }
+
+        if(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) - zero_offset_coude >= 0)
+        {
+          set_PosGoal_deg(ID_COUDE, -100 + zero_offset_coude);
+          set_PosGoal_deg(ID_POIGNET, -74 + zero_offset_poignet);
+          set_PosGoal_deg(ID_EPAULE, -80 + zero_offset_epaule);
+        }
+        else if(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) - zero_offset_coude <= -90)
+        {
+          set_PosGoal_deg(ID_COUDE, zero_offset_coude);
+          set_PosGoal_deg(ID_POIGNET, zero_offset_poignet);
+          set_PosGoal_deg(ID_EPAULE, 80 + zero_offset_epaule);
+        }
         break;
 
         case STATIQUE:
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
         if (runmode_temp != runmode_temp_prev)
         {
           set_mode(OP_VELOCITY);
@@ -490,34 +498,35 @@ void set_mode(int mode){
   }
 }
 
-void set_PosGoal_deg(const uint8_t ID, float goal){
-  // if(ID == ID_EPAULE)
-  // {
-  //   if(goal > 90.0 + zero_offset_epaule)
-  //     goal = 90.0 + zero_offset_epaule;
+bool set_PosGoal_deg(const uint8_t ID, float goal){
+  if(ID == ID_EPAULE)
+  {
+    if(goal - zero_offset_epaule > 89.0)
+      goal = 89.0 + zero_offset_epaule;
 
-  //   if(goal < -90.0 + zero_offset_epaule)
-  //     goal = -90.0 + zero_offset_epaule;
-  // }
+    if(goal - zero_offset_epaule < -89.0)
+      goal = -89.0 + zero_offset_epaule;
+  }
   
   // if(ID == ID_COUDE)
   // {
-  //   if(goal > 125.0 + zero_offset_coude)//TODO: JSP L'ANGLE À VERIF
-  //     goal = 125.0 + zero_offset_coude;
+  //   if(goal - zero_offset_coude > 110.0)//TODO: JSP L'ANGLE À VERIF
+  //     goal = 110.0 + zero_offset_coude;
 
-  //   if(goal < zero_offset_coude)
+  //   if(goal - zero_offset_coude < zero_offset_coude)
   //     goal = zero_offset_coude;
   // }
 
-  // if(ID == ID_POIGNET)
-  // {
-  //   if(goal > 75.0 + zero_offset_poignet)//TODO: JSP L'ANGLE À VERIF
-  //     goal = 75.0 + zero_offset_poignet;
+  if(ID == ID_POIGNET)
+  {
+    if(goal - zero_offset_poignet > 74.0)//TODO: JSP L'ANGLE À VERIF
+      goal = 74.0 + zero_offset_poignet;
 
-  //   if(goal < -75.0 + zero_offset_poignet)//TODO: JSP L'ANGLE À VERIF
-  //     goal = -75.0 + zero_offset_poignet;
-  // }
-  dxl.setGoalPosition(ID, goal, UNIT_DEGREE);
+    if(goal - zero_offset_poignet < -74.0)//TODO: JSP L'ANGLE À VERIF
+      goal = -74.0 + zero_offset_poignet;
+  }
+
+  return dxl.setGoalPosition(ID, goal, UNIT_DEGREE);
 }
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -546,10 +555,10 @@ void taskCommInterface(void const *pvParameters)
     }
 
     ////// Envoi à l'interface //////
-    Serial.println(String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
-                   String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque) + "," + String(exo_temp.poignet.velocite) +
-                   "," + String(exo_temp.coude.velocite) + "," + String(exo_temp.epaule.velocite) + "," + String(exo_temp.poignet.goalPWM) +
-                   "," + String(exo_temp.coude.goalPWM) + "," + String(exo_temp.epaule.goalPWM) );
+    // Serial.println(String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
+    //                String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque) + "," + String(exo_temp.poignet.velocite) +
+    //                "," + String(exo_temp.coude.velocite) + "," + String(exo_temp.epaule.velocite) + "," + String(exo_temp.poignet.goalPWM) +
+    //                "," + String(exo_temp.coude.goalPWM) + "," + String(exo_temp.epaule.goalPWM) );
 
     ////// Réception de l'interface //////
     if(Serial.available())
