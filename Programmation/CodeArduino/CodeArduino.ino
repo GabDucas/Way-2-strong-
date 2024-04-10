@@ -229,9 +229,9 @@ void moteurs_controls( void const *pvParameters)
             dxl.writeControlTableItem(VELOCITY_LIMIT, ID_COUDE, 100);
             dxl.writeControlTableItem(VELOCITY_LIMIT, ID_POIGNET, 100);
 
-            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 30);
-            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 30);
-            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 30);
+            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 15);
+            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 15);
+            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 15);
 
             dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule + 200);
             dxl.setGoalPWM(ID_COUDE, max_PWM_coude + 200);
@@ -308,7 +308,7 @@ void moteurs_controls( void const *pvParameters)
         {
           dxl.setGoalPWM(ID_COUDE, max_PWM_epaule/100);
 
-          dxl.setGoalVelocity(ID_COUDE,50);
+          dxl.setGoalVelocity(ID_COUDE,-1);
           // Serial.println("POIGNET BAS");
         }
 
@@ -331,9 +331,9 @@ void moteurs_controls( void const *pvParameters)
 
         else if(dxl.getPresentVelocity(ID_EPAULE) > 1)
         {
-          dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule/100);
+          dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule/200);
 
-          dxl.setGoalVelocity(ID_EPAULE,50);
+          dxl.setGoalVelocity(ID_EPAULE,-1);
           // Serial.println("POIGNET BAS");
         }
 
@@ -362,9 +362,9 @@ void moteurs_controls( void const *pvParameters)
             dxl.writeControlTableItem(VELOCITY_LIMIT, ID_COUDE, 100);
             dxl.writeControlTableItem(VELOCITY_LIMIT, ID_POIGNET, 100);
 
-            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 30);
-            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 30);
-            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 30);
+            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 20);
+            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 20);
+            dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 20);
 
             dxl.setGoalPWM(ID_EPAULE, 500);
             dxl.setGoalPWM(ID_COUDE, 500);
@@ -407,9 +407,9 @@ void moteurs_controls( void const *pvParameters)
           dxl.writeControlTableItem(VELOCITY_LIMIT, ID_COUDE, 30);
           dxl.writeControlTableItem(VELOCITY_LIMIT, ID_POIGNET, 30);
 
-          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 30);
-          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 30);
-          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 30);
+          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 15);
+          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 15);
+          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 15);
 
           count_curls = 0;
         }
@@ -433,7 +433,7 @@ void moteurs_controls( void const *pvParameters)
 
         case STATIQUE:
 
-        if (runmode_temp != runmode_temp_prev)
+        if (first)
         {
           set_mode(OP_VELOCITY);
           dxl.setGoalVelocity(ID_EPAULE,0);
@@ -560,10 +560,10 @@ void taskCommInterface(void const *pvParameters)
     }
 
     ////// Envoi à l'interface //////
-    // Serial.println(String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
-    //                String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque) + "," + String(exo_temp.poignet.velocite) +
-    //                "," + String(exo_temp.coude.velocite) + "," + String(exo_temp.epaule.velocite) + "," + String(exo_temp.poignet.goalPWM) +
-    //                "," + String(exo_temp.coude.goalPWM) + "," + String(exo_temp.epaule.goalPWM) );
+    Serial.println(String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
+                   String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque) + "," + String(exo_temp.poignet.velocite) +
+                   "," + String(exo_temp.coude.velocite) + "," + String(exo_temp.epaule.velocite) + "," + String(exo_temp.poignet.goalPWM) +
+                   "," + String(exo_temp.coude.goalPWM) + "," + String(exo_temp.epaule.goalPWM) );
 
     ////// Réception de l'interface //////
     if(Serial.available())
