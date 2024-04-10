@@ -267,7 +267,7 @@ void moteurs_controls( void const *pvParameters)
           dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule);
           dxl.setGoalPWM(ID_COUDE, max_PWM_coude);
           dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet);
-          delay(100);// POUR ASSURER QUE LE BRAS TOMBE PAS LORS DE CHANGEMENT DE MODE
+          delay(200);// POUR ASSURER QUE LE BRAS TOMBE PAS LORS DE CHANGEMENT DE MODE
         }
         //========================================================POIGNET======================================================== 
         if(abs(dxl.getPresentVelocity(ID_POIGNET)) <= 0.5)
@@ -441,6 +441,7 @@ void moteurs_controls( void const *pvParameters)
           dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule);
           dxl.setGoalPWM(ID_COUDE, max_PWM_coude);
           dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet);
+          delay(200);// POUR ASSURER QUE LE BRAS TOMBE PAS LORS DE CHANGEMENT DE MODE
         }
         // Serial.println(state); //TODO À ENLEVER
         if ( state == 0 && (abs(max_PWM_poignet)>=abs(dxl.getPresentPWM(ID_POIGNET)) && abs(max_PWM_poignet)<=abs(dxl.getPresentPWM(ID_POIGNET)+10)  || abs(max_PWM_coude)>=abs(dxl.getPresentPWM(ID_COUDE)) && abs(max_PWM_coude)<=abs(dxl.getPresentPWM(ID_COUDE)+10) || abs(max_PWM_epaule)>=abs(dxl.getPresentPWM(ID_EPAULE)) && abs(max_PWM_poignet)<=abs(dxl.getPresentPWM(ID_EPAULE)+10)))
