@@ -180,7 +180,7 @@ void moteurs_controls( void const *pvParameters)
   bool first = true;
 
   //++++++++++++++++++POUR CALIB+++++++++++++++++++++++++++++++++++++
-  int wait = 4000;//ms
+  int wait = 5000;//ms
   int N_moyenne = 20;
   float PWM_epaule = 0.0;
   float PWM_coude = 0.0;
@@ -210,7 +210,7 @@ void moteurs_controls( void const *pvParameters)
       first = true;
     }
 
-    if(runmode_temp != E_STOP)// || runmode_temp == MANUEL || runmode_temp == ANTI_GRATIVE || runmode_temp == CALIBRATION || runmode_temp == STATIQUE || runmode_temp == CURL )
+    if(runmode_temp != E_STOP)
     {
       switch(runmode_temp)
       {
@@ -350,7 +350,6 @@ void moteurs_controls( void const *pvParameters)
           if(first)
           {
             count_loop_calib = 0;
-            wait = 4000;//ms
             N_moyenne = 20;
             PWM_epaule = 0.0;
             PWM_coude = 0.0;
