@@ -221,7 +221,7 @@ void moteurs_controls( void const *pvParameters)
         break;
 
         case MANUEL:
-          if(exo_temp.epaule.commandeMoteur != commande_prev_epaule || exo_temp.coude.commandeMoteur != commande_prev_coude || exo_temp.poignet.commandeMoteur != commande_prev_poignet )
+          if(first)
           {
             set_mode(OP_EXTENDED_POSITION);
 
@@ -237,6 +237,9 @@ void moteurs_controls( void const *pvParameters)
             dxl.setGoalPWM(ID_COUDE, exo_temp.coude.goalPWM + 200);
             dxl.setGoalPWM(ID_POIGNET, exo_temp.poignet.goalPWM + 200);
             
+          }
+          if(exo_temp.epaule.commandeMoteur != commande_prev_epaule || exo_temp.coude.commandeMoteur != commande_prev_coude || exo_temp.poignet.commandeMoteur != commande_prev_poignet )
+          {
             set_PosGoal_deg(ID_COUDE, -exo_temp.coude.commandeMoteur + zero_offset_coude);
             set_PosGoal_deg(ID_EPAULE, -exo_temp.epaule.commandeMoteur + zero_offset_epaule);
             set_PosGoal_deg(ID_POIGNET, -exo_temp.poignet.commandeMoteur + zero_offset_poignet);
@@ -341,51 +344,6 @@ void moteurs_controls( void const *pvParameters)
           dxl.setGoalVelocity(ID_EPAULE,-50);
           // Serial.println("POIGNET HAUT");
         }
-        //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        // if (runmode_temp != runmode_temp_prev)
-        // {
-        //   set_mode(OP_VELOCITY);
-        //   dxl.setGoalVelocity(ID_EPAULE,0);
-        //   dxl.setGoalVelocity(ID_COUDE,0);
-        //   dxl.setGoalVelocity(ID_POIGNET,0);
-        //   dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule);
-        //   dxl.setGoalPWM(ID_COUDE, max_PWM_coude);
-        //   dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet);
-        // }
-        // // Serial.println(state); //TODO À ENLEVER
-        // if ( state == 0 && (abs(max_PWM_poignet)>=abs(dxl.getPresentPWM(ID_POIGNET)) && abs(max_PWM_poignet)<=abs(dxl.getPresentPWM(ID_POIGNET)+10)  || abs(max_PWM_coude)>=abs(dxl.getPresentPWM(ID_COUDE)) && abs(max_PWM_coude)<=abs(dxl.getPresentPWM(ID_COUDE)+10) || abs(max_PWM_epaule)>=abs(dxl.getPresentPWM(ID_EPAULE)) && abs(max_PWM_poignet)<=abs(dxl.getPresentPWM(ID_EPAULE)+10)))
-        // {
-        //   // Serial.print(" EPAULE: ");
-        //   // Serial.print(dxl.getPresentPWM(ID_EPAULE));
-        //   // Serial.print(" COUDE: ");
-        //   // Serial.print(dxl.getPresentPWM(ID_COUDE));
-        //   // Serial.print(" POIGNET: ");
-        //   // Serial.println(dxl.getPresentPWM(ID_POIGNET));
-        //   state = 1;
-        //   // dxl.setGoalPWM(ID_EPAULE, exo_temp.epaule.goalPWM/100);
-        //   // dxl.setGoalPWM(ID_COUDE, exo_temp.coude.goalPWM/100);
-        //   // dxl.setGoalPWM(ID_POIGNET, max_PWM_poignetexo_temp.poignet.goalPWM/100);
-
-        //   dxl.torqueOff(ID_COUDE);
-        //   dxl.torqueOff(ID_POIGNET);
-        //   dxl.torqueOff(ID_EPAULE);
-        // }
-        // if ( state == 1 && abs(dxl.getPresentVelocity(ID_POIGNET)) <= 1 && abs(dxl.getPresentVelocity(ID_COUDE)) <= 1 && abs(dxl.getPresentVelocity(ID_EPAULE)) <= 1 )
-        // {
-        //   state = 0;
-        //   // dxl.setGoalPWM(ID_EPAULE, abs(exo_temp.epaule.goalPWM));
-        //   // dxl.setGoalPWM(ID_COUDE, abs(exo_temp.coude.goalPWM));
-        //   // dxl.setGoalPWM(ID_POIGNET, abs(exo_temp.poignet.goalPWM));
-        //   dxl.torqueOn(ID_COUDE);
-        //   dxl.torqueOn(ID_POIGNET);
-        //   dxl.torqueOn(ID_EPAULE);
-        //   // Serial.print(" __________________EPAULE__________________: ");
-        //   // Serial.print( exo_temp.epaule.goalPWM);
-        //   // Serial.print(" COUDE: ");
-        //   // Serial.print(exo_temp.coude.goalPWM);
-        //   // Serial.print(" POIGNET: ");
-        //   // Serial.println(exo_temp.poignet.goalPWM);
-        // }
         break;
 
         case CALIBRATION:
@@ -451,36 +409,66 @@ void moteurs_controls( void const *pvParameters)
         break;
 
         case STATIQUE:
-          set_mode(OP_EXTENDED_POSITION);
-          dxl.setGoalPWM(ID_EPAULE, 500);
-          dxl.setGoalPWM(ID_COUDE, 500);
-          dxl.setGoalPWM(ID_POIGNET, 500);
-          dxl.setGoalPosition(ID_COUDE, dxl.getPresentPosition(ID_COUDE));
-          dxl.setGoalPosition(ID_EPAULE, dxl.getPresentPosition(ID_EPAULE));
-          dxl.setGoalPosition(ID_POIGNET, dxl.getPresentPosition(ID_POIGNET));
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        if (runmode_temp != runmode_temp_prev)
+        {
+          set_mode(OP_VELOCITY);
+          dxl.setGoalVelocity(ID_EPAULE,0);
+          dxl.setGoalVelocity(ID_COUDE,0);
+          dxl.setGoalVelocity(ID_POIGNET,0);
+          dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule);
+          dxl.setGoalPWM(ID_COUDE, max_PWM_coude);
+          dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet);
+        }
+        // Serial.println(state); //TODO À ENLEVER
+        if ( state == 0 && (abs(max_PWM_poignet)>=abs(dxl.getPresentPWM(ID_POIGNET)) && abs(max_PWM_poignet)<=abs(dxl.getPresentPWM(ID_POIGNET)+10)  || abs(max_PWM_coude)>=abs(dxl.getPresentPWM(ID_COUDE)) && abs(max_PWM_coude)<=abs(dxl.getPresentPWM(ID_COUDE)+10) || abs(max_PWM_epaule)>=abs(dxl.getPresentPWM(ID_EPAULE)) && abs(max_PWM_poignet)<=abs(dxl.getPresentPWM(ID_EPAULE)+10)))
+        {
+          // Serial.print(" EPAULE: ");
+          // Serial.print(dxl.getPresentPWM(ID_EPAULE));
+          // Serial.print(" COUDE: ");
+          // Serial.print(dxl.getPresentPWM(ID_COUDE));
+          // Serial.print(" POIGNET: ");
+          // Serial.println(dxl.getPresentPWM(ID_POIGNET));
+          state = 1;
+          // dxl.setGoalPWM(ID_EPAULE, exo_temp.epaule.goalPWM/100);
+          // dxl.setGoalPWM(ID_COUDE, exo_temp.coude.goalPWM/100);
+          // dxl.setGoalPWM(ID_POIGNET, max_PWM_poignetexo_temp.poignet.goalPWM/100);
+
+          dxl.torqueOff(ID_COUDE);
+          dxl.torqueOff(ID_POIGNET);
+          dxl.torqueOff(ID_EPAULE);
+        }
+        if ( state == 1 && abs(dxl.getPresentVelocity(ID_POIGNET)) <= 1 && abs(dxl.getPresentVelocity(ID_COUDE)) <= 1 && abs(dxl.getPresentVelocity(ID_EPAULE)) <= 1 )
+        {
+          state = 0;
+          // dxl.setGoalPWM(ID_EPAULE, abs(exo_temp.epaule.goalPWM));
+          // dxl.setGoalPWM(ID_COUDE, abs(exo_temp.coude.goalPWM));
+          // dxl.setGoalPWM(ID_POIGNET, abs(exo_temp.poignet.goalPWM));
+          dxl.torqueOn(ID_COUDE);
+          dxl.torqueOn(ID_POIGNET);
+          dxl.torqueOn(ID_EPAULE);
+          // Serial.print(" __________________EPAULE__________________: ");
+          // Serial.print( exo_temp.epaule.goalPWM);
+          // Serial.print(" COUDE: ");
+          // Serial.print(exo_temp.coude.goalPWM);
+          // Serial.print(" POIGNET: ");
+          // Serial.println(exo_temp.poignet.goalPWM);
+        }
         break;
 
         default:
-          //APPEL MEME FONCTION QUE E-STOP(I GUESS?)
-          //Appelle rien je penses
+          dxl.torqueOff(ID_COUDE);
+          dxl.torqueOff(ID_POIGNET);
+          dxl.torqueOff(ID_EPAULE);
         break;
       }
     }
 
-    // Serial.print("loop MODE: ");
-    // Serial.println(runmode_temp);
     runmode_temp_prev = runmode_temp;
     commande_prev_epaule = exo_temp.epaule.commandeMoteur;
     commande_prev_coude = exo_temp.coude.commandeMoteur;
     commande_prev_poignet = exo_temp.poignet.commandeMoteur;
    
-    // Serial.print(" EPAULE: ");
-    // Serial.print(dxl.getPresentPWM(ID_EPAULE));
-    // Serial.print(" COUDE: ");
-    // Serial.print(dxl.getPresentPWM(ID_COUDE));
-    // Serial.print(" POIGNET: ");
-    // Serial.println(dxl.getPresentPWM(ID_POIGNET));
-
     osDelay(pdMS_TO_TICKS(delay_task));
   }
 }
