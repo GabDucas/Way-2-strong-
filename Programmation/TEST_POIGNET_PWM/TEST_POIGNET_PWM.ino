@@ -41,17 +41,17 @@ void setup() {
 //ÉPAULE
   // Turn off torque when configuring items in EEPROM area
   dxl.torqueOff(ID_EPAULE);
-  dxl.setOperatingMode(ID_EPAULE, OP_EXTENDED_POSITION);
+  dxl.setOperatingMode(ID_EPAULE, OP_VELOCITY);
 
 //COUDE
   // Turn off torque when configuring items in EEPROM area
   dxl.torqueOff(ID_COUDE);
-  dxl.setOperatingMode(ID_COUDE, OP_EXTENDED_POSITION);
+  dxl.setOperatingMode(ID_COUDE, OP_VELOCITY);
 
 //POIGNET
   // Turn off torque when configuring items in EEPROM area
   dxl.torqueOff(ID_POIGNET);
-  dxl.setOperatingMode(ID_POIGNET, OP_EXTENDED_POSITION);
+  dxl.setOperatingMode(ID_POIGNET, OP_VELOCITY);
 
 //WIRE TABLE
   // Limit the maximum velocity in Position Control Mode. Use 0 for Max speed
@@ -106,11 +106,13 @@ void setup() {
 void loop() {
 
   DEBUG_SERIAL.print("THETA EPAULE: ");
-  DEBUG_SERIAL.print(dxl.getPresentPosition(ID_EPAULE, UNIT_DEGREE));
+  DEBUG_SERIAL.print(dxl.getPresentVelocity(ID_EPAULE));
   DEBUG_SERIAL.print(" THETA COUDE: ");
-  DEBUG_SERIAL.print(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE));
+  DEBUG_SERIAL.print(dxl.getPresentVelocity(ID_COUDE));
   DEBUG_SERIAL.print(" THETA POIGNET: ");
-  DEBUG_SERIAL.println(dxl.getPresentPosition(ID_POIGNET, UNIT_DEGREE));
+  DEBUG_SERIAL.println(dxl.getPresentVelocity(ID_POIGNET));
+
+  // dxl.setGoalVelocity(ID_POIGNET,-10);
 
   // DEBUG_SERIAL.print(" PWM EPAULE ");
   // DEBUG_SERIAL.print(dxl.getPresentPWM(ID_EPAULE));
@@ -120,7 +122,7 @@ void loop() {
   // DEBUG_SERIAL.print(" OFFSET : ");
   // DEBUG_SERIAL.println(OP_EXTENDED_POSITION);
 
-  delay(1000);
+  delay(10);
 }
 
 void set_mode(int mode){
