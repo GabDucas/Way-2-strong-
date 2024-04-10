@@ -233,9 +233,9 @@ void moteurs_controls( void const *pvParameters)
             dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 30);
             dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 30);
 
-            dxl.setGoalPWM(ID_EPAULE, exo_temp.epaule.goalPWM + 200);
-            dxl.setGoalPWM(ID_COUDE, exo_temp.coude.goalPWM + 200);
-            dxl.setGoalPWM(ID_POIGNET, exo_temp.poignet.goalPWM + 200);
+            dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule + 200);
+            dxl.setGoalPWM(ID_COUDE, max_PWM_coude + 200);
+            dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet + 200);
             
           }
           if(exo_temp.epaule.commandeMoteur != commande_prev_epaule || exo_temp.coude.commandeMoteur != commande_prev_coude || exo_temp.poignet.commandeMoteur != commande_prev_poignet )
@@ -546,10 +546,10 @@ void taskCommInterface(void const *pvParameters)
     }
 
     ////// Envoi à l'interface //////
-    // Serial.println(String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
-    //                String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque) + "," + String(exo_temp.poignet.velocite) +
-    //                "," + String(exo_temp.coude.velocite) + "," + String(exo_temp.epaule.velocite) + "," + String(exo_temp.poignet.goalPWM) +
-    //                "," + String(exo_temp.coude.goalPWM) + "," + String(exo_temp.epaule.goalPWM) );
+    Serial.println(String(millis()) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
+                   String(exo_temp.poignet.torque) + "," + String(exo_temp.coude.torque) + "," + String(exo_temp.epaule.torque) + "," + String(exo_temp.poignet.velocite) +
+                   "," + String(exo_temp.coude.velocite) + "," + String(exo_temp.epaule.velocite) + "," + String(exo_temp.poignet.goalPWM) +
+                   "," + String(exo_temp.coude.goalPWM) + "," + String(exo_temp.epaule.goalPWM) );
 
     ////// Réception de l'interface //////
     if(Serial.available())
