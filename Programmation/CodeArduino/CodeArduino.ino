@@ -297,7 +297,7 @@ void moteurs_controls( void const *pvParameters)
       else if(dxl.getPresentVelocity(ID_COUDE) > 1)
       {
         // Si l'utilisateur tente de faire bougé l'articulation vers le haut assiste à vitesse constante.
-        dxl.setGoalPWM(ID_COUDE, 5);
+        dxl.setGoalPWM(ID_COUDE, max_PWM_coude/2);
         dxl.setGoalVelocity(ID_COUDE,-1);
       }
 
@@ -318,7 +318,7 @@ void moteurs_controls( void const *pvParameters)
       else if(dxl.getPresentVelocity(ID_EPAULE) > 1)
       {
         // Si l'utilisateur tente de faire bougé l'articulation vers le haut assiste à vitesse constante.
-        dxl.setGoalPWM(ID_EPAULE, 5);
+        dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule/2);
         dxl.setGoalVelocity(ID_EPAULE,-1);
       }
 
