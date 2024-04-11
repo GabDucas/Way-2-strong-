@@ -399,14 +399,14 @@ void moteurs_controls( void const *pvParameters)
       }
       if(count_curls*delay_task >= wait) // Attent 5 secondes pour assurer que la position de curl est atteint avant de commencer.
       {
-        if(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) - zero_offset_coude >= 0)
+        if(-dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) - zero_offset_coude >= 0)
         {
           //Position final pour les 3 moteurs 
           set_PosGoal_deg(ID_COUDE, -100 + zero_offset_coude);
           set_PosGoal_deg(ID_POIGNET, -74 + zero_offset_poignet);
           set_PosGoal_deg(ID_EPAULE, -80 + zero_offset_epaule);
         }
-        else if(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) - zero_offset_coude <= -90)
+        if(-dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE) - zero_offset_coude <= -90)
         {
           //Position de départ pour les 3 moteurs 
           set_PosGoal_deg(ID_COUDE, zero_offset_coude);
