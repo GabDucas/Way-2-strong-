@@ -191,7 +191,7 @@ class Application(customtkinter.CTk):
         # -----------------------------------------------------------------------------------#
 
         # Frame Gauche Bas (Envoi de commande)
-        self.labelEnvoieCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16), text="Envoie de commandes aux moteurs : ", pady=20)
+        self.labelEnvoieCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16), text="Mode manuel: ", pady=20)
         self.labelPoignetCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16), text="Poignet :")
         self.labelCoudeCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16), text="Coude :")
         self.labelEpauleCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16), text="Épaule :")
@@ -282,7 +282,6 @@ class Application(customtkinter.CTk):
         global ancienneCommandeMoteur
         global commandeAEnvoyer
 
-        self.checkManuel.deselect()
         commandeMoteur = "0,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
@@ -292,7 +291,6 @@ class Application(customtkinter.CTk):
         global ancienneCommandeMoteur
         global commandeAEnvoyer
 
-        self.checkManuel.deselect()
         commandeMoteur = "2,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
@@ -303,7 +301,6 @@ class Application(customtkinter.CTk):
         global ancienneCommandeMoteur
         global commandeAEnvoyer
 
-        self.checkManuel.deselect()
         commandeMoteur = "3,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
@@ -313,7 +310,6 @@ class Application(customtkinter.CTk):
         global ancienneCommandeMoteur
         global commandeAEnvoyer
 
-        self.checkManuel.deselect()
         commandeMoteur = "4,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
@@ -323,7 +319,6 @@ class Application(customtkinter.CTk):
         global ancienneCommandeMoteur
         global commandeAEnvoyer
 
-        self.checkManuel.deselect()
         commandeMoteur = "5,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
