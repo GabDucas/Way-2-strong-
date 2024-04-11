@@ -1,0 +1,78 @@
+NewtonianFrame N
+
+RigidBody A,B,C
+Particle Pload
+System COUDE(B,C,Pload)
+System POIGNET(C,Pload)
+
+Constant g = 9.81 m/s^2
+
+Constant mA = 220 g %À verifier
+Constant mB = 220 g %À verifier
+Constant mC = 220 g %À verifier
+Constant mPload = 220 g %À verifier
+
+Constant La = 0.1 m 
+Constant A_b = 38.1 mm %ESTIMATION DU SOLIDWORKS
+Constant A_a = 0.1 m %EGALE À La
+Constant Lacm =  0.1/2 m %PAS BON
+
+Constant Lb = 0.1 m 
+Constant B_b = 38.1 mm %ESTIMATION DU SOLIDWORKS
+Constant B_a = 0.1 m %EGALE À Lb
+Constant Lbcm = 0.1/2 m %PAS BON
+
+Constant Lc = 0.1 m 
+Constant C_b = 38.1 mm %ESTIMATION DU SOLIDWORKS
+Constant C_a = 0.1 m %EGALE À Lc
+Constant Lccm = 0.1/2 m %PAS BON
+
+Variable theta_a''
+Variable theta_b''
+Variable theta_c''
+
+Variable Tm_epaule
+Variable Tm_coude
+Variable Tm_poignet
+
+Pload.SetMass(mass_Pload)
+A.SetMass(mA)
+B.SetMass(mB)
+C.SetMass(mC)
+
+IA = (1/12*mA*A_b^2) + (1/12*mA*A_a^2)
+A.SetInertia(Acm,0,0,IA)
+
+IB = (1/12*mB*B_b^2) + (1/12*mB*B_a^2)
+B.SetInertia(Bcm,0,0,IB)
+
+IC = (1/12*mC*C_b^2) + (1/12*mC*C_a^2)
+C.SetInertia(Ccm,0,0,IC)
+
+A.RotateZ(N,theta_a)
+B.RotateZ(N,theta_b)
+C.RotateZ(N,theta_c)
+
+Ao.Translate(No, 0>)
+Acm.Translate(Ao, -Lacm*Ay>)
+Bo.Translate(Ao, -La*Ay>)
+Bcm.Translate(Bo, -Lbcm*By>)
+Co.Translate(Bo, -Lb*By>)
+Ccm.Translate(Co, -Lccm*Cy>)
+Pload.Translate(Co, -Lc*Cy>)
+
+Acm.AddForce(-mA*g*Ny>)
+Bcm.AddForce(-mB*g*Ny>)
+Ccm.AddForce(-mC*g*Ny>)
+Pload.AddForce(-mPload*g*Ny>)
+
+A.AddTorque(N,Tm_epaule*Nz>)
+B.AddTorque(A,Tm_coude*Nz>)
+C.AddTorque(B,Tm_poignet*Nz>)
+
+EQU[1] = dot(Nz>, system.GetDynamics(Ao))%MOTEUR EPAULE
+EQU[2] = dot(Nz>, COUDE.GetDynamics(Bo))%MOTEUR COUDE
+EQU[3] = dot(Nz>, POIGNET.GetDynamics(Co))%MOTEUR POIGNET
+
+
+
