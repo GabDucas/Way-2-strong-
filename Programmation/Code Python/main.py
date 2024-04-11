@@ -1,3 +1,4 @@
+#-----------------------------------------------------------------------------------#
 import time
 import customtkinter
 import serial
@@ -9,9 +10,8 @@ import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QWidget
 import pyqtgraph as pg
 from collections import deque
+#-----------------------------------------------------------------------------------#
 
-customtkinter.set_appearance_mode("dark")
-customtkinter.set_default_color_theme("dark-blue")
 
 temps = 0
 
@@ -22,8 +22,6 @@ anglePoignet = 0
 vitesseEpaule = 0
 vitesseCoude = 0
 vitessePoignet = 0
-
-mode_moteur = 42
 
 commandeMoteur = ""
 ancienneCommandeMoteur = "commande de moteur"
@@ -50,10 +48,10 @@ class gestionPort():
         global ancienneCommandeMoteur
         with lock:
             commandeMoteur = (commandeMoteur +  ",\n")
-            #if commandeMoteur != (ancienneCommandeMoteur+  ",\n"):
             self.serial_port.write(commandeMoteur.encode())
             ancienneCommandeMoteur = commandeMoteur
 
+#Classe permettant de faire une représentation de l'exosquelette en temps-réel
 class RealTimePlot(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -77,32 +75,34 @@ class RealTimePlot(QMainWindow):
         self.plotGraph = self.plot_widget
         self.setCentralWidget(self.plotGraph)
         self.curve = self.plotGraph
-        self.pen = pg.mkPen(color=(255, 0, 127), width=15) #permet de donner un style au ligne de graphique
 
-        self.data = deque(maxlen=1000)  # Liste de data contenant les angles
-        self.x = 0
-        self.y = 0
+        # permet de donner un style au ligne de graphique
+        self.pen = pg.mkPen(color=(255, 0, 127), width=15)
+
+        #Liste de point dans le graphique
+        self.data = deque(maxlen=4)
 
         self.timer = pg.QtCore.QTimer()
         self.timer.timeout.connect(self.update_plot)
-        self.timer.start(40)  # Update plot every ___ milliseconds
+        self.timer.start(40)
 
+    #Fonction permettant d'actualiser la position de l'exosquelette dans le graphique
     def update_plot(self):
 
         self.plotGraph.clear()
         try:
             #Longueur entre les points d'imu
-            l1 = 3
+            l1 = 4
             l2 = 3
             l3 = 2
 
-
-            #Ajoute un point à (1,1)
+            #Ajoute un point ancrage à x=0, y=0
             self.data.append((0, 0))
 
             angleEpauleRad = (angleEpaule % 360) *2*np.pi/360
             angleCoudeRad = (angleCoude % 360) * 2 * np.pi / 360
             anglePoignetRad = (anglePoignet % 360) * 2 * np.pi / 360
+
             with lock:
                 point1x = l1*np.cos(angleEpauleRad)
                 point1y = l1*np.sin(angleEpauleRad)
@@ -129,7 +129,7 @@ class RealTimePlot(QMainWindow):
         except Exception as e:
             print(e)
 
-
+#Classe de l'interface graphique de l'exosquelette
 class Application(customtkinter.CTk):
     global temps
     global angleEpaule
@@ -143,6 +143,10 @@ class Application(customtkinter.CTk):
 
         super().__init__(*args, **kwargs)
 
+        # -----------------------------------------------------------------------------------#
+        customtkinter.set_appearance_mode("dark")
+        customtkinter.set_default_color_theme("dark-blue")
+
         back_color = "gray18"
 
         self.title('Exosquelette')
@@ -153,64 +157,52 @@ class Application(customtkinter.CTk):
 
         self.LabelTitre = customtkinter.CTkLabel(master=self, font = ("Helvetica", 24), text="Panneau de contrôle")
         self.LabelTitre.grid(row=0, column=0, columnspan=2)
+        # -----------------------------------------------------------------------------------#
 
         self.frameGauche = customtkinter.CTkFrame(self, fg_color=back_color)
-        self.frameGauche.grid(row=1, column=0, padx=10, pady=10)
-
-        self.frameDroit = customtkinter.CTkFrame(self, fg_color=back_color)
-        self.frameDroit.grid(row=1, column=1, padx=10, pady=10)
-
-        ## Frame Gauche
         self.frameGauche_Haut = customtkinter.CTkFrame(self.frameGauche, fg_color=back_color)
-        self.frameGauche_Haut.grid(row=0, column=0, padx=10, pady=10)
-
         self.frameGauche_Bas = customtkinter.CTkFrame(self.frameGauche, fg_color=back_color)
+        self.frameDroit = customtkinter.CTkFrame(self, fg_color=back_color)
+        self.frameDroit_Haut = customtkinter.CTkFrame(self.frameDroit, fg_color=back_color)
+        self.frameDroit_bas = customtkinter.CTkFrame(self.frameDroit, fg_color=back_color)
+
+
         self.frameGauche_Bas.grid(row=1, column=0, padx=10, pady=10)
+        self.frameGauche.grid(row=1, column=0, padx=10, pady=10)
+        self.frameDroit.grid(row=1, column=1, padx=10, pady=10)
+        self.frameGauche_Haut.grid(row=0, column=0, padx=10, pady=10)
+        self.frameDroit_Haut.grid(row=0, column=0, padx=5, pady=5)
+        self.frameDroit_bas.grid(row=1, column=0, padx=5, pady=5)
+        # -----------------------------------------------------------------------------------#
 
         # Frame Gauche Haut (Choix des modes)
         self.labelMode = customtkinter.CTkLabel(master=self.frameGauche_Haut, font=("Helvetica", 16), text="Mode : ")
-
-        #check_var_Manuel = customtkinter.StringVar(value="Off")
-        self.checkManuel = customtkinter.CTkCheckBox(master=self.frameGauche_Haut, text="Manuel", onvalue=1, offvalue=2,
-                                                     border_color="White",
-                                                     hover_color="White", fg_color="White")
-
         self.boutonStatique = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Statique", command=self.commandeStatique)
         self.boutonAntigrav = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Anti-gravité", command=self.commandeAntigrav)
         self.boutonCurl = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Curl", command=self.commandeCurl)
-
         self.boutonCalib = customtkinter.CTkButton(master=self.frameGauche_Haut, text="Calibration", command=self.commandeCalibration)
 
         self.labelMode.grid(row=0, column=0, padx=10, pady=10)
-        self.checkManuel.grid(row=5, column=0, padx=7, pady=7)
         self.boutonCalib.grid(row=2,column=0,padx=5,pady=5)
         self.boutonAntigrav.grid(row=3, column=0, padx=5, pady=5)
         self.boutonCurl.grid(row=4, column=0, padx=5, pady=5)
         self.boutonStatique.grid(row=1, column=0, padx=5, pady=5)
 
+        # -----------------------------------------------------------------------------------#
 
         # Frame Gauche Bas (Envoi de commande)
         self.labelEnvoieCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16), text="Envoie de commandes aux moteurs : ", pady=20)
-
         self.labelPoignetCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16), text="Poignet :")
-        self.labelCoudeCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16),
-                                                           text="Coude :")
-        self.labelEpauleCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16),
-                                                           text="Épaule :")
+        self.labelCoudeCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16), text="Coude :")
+        self.labelEpauleCommande = customtkinter.CTkLabel(master=self.frameGauche_Bas, font=("Helvetica", 16), text="Épaule :")
 
-        self.valeurPoignetEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=75, fg_color="White",
-                                                         text_color="Black")
-        self.valeurCoudeEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=75, fg_color="White",
-                                                       text_color="Black")
-        self.valeurEpauleEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=75, fg_color="White",
-                                                        text_color="Black")
-
+        self.valeurPoignetEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=75, fg_color="White", text_color="Black")
+        self.valeurCoudeEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=75, fg_color="White", text_color="Black")
+        self.valeurEpauleEntry = customtkinter.CTkEntry(master=self.frameGauche_Bas, width=75, fg_color="White", text_color="Black")
         self.boutonMoteur = customtkinter.CTkButton(master=self.frameGauche_Bas, text="Envoie Commande",  width=100, command=self.commandeBouton )
 
         self.labelEnvoieCommande.grid(row=0, column=0, columnspan=4)
-
         self.boutonMoteur.grid(row=2, column=3)
-
         self.labelPoignetCommande.grid(row=1, column=0, padx=5)
         self.labelCoudeCommande.grid(row=1, column=1, padx=5)
         self.labelEpauleCommande.grid(row=1, column=2, padx=5)
@@ -219,25 +211,16 @@ class Application(customtkinter.CTk):
         self.valeurCoudeEntry.grid(row=2, column=1, padx=5)
         self.valeurEpauleEntry.grid(row=2, column=2, padx=5)
 
-        self.frameDroit_Haut = customtkinter.CTkFrame(self.frameDroit, fg_color=back_color)
-        self.frameDroit_Haut.grid(row=0, column=0, padx=5, pady=5)
-
-        self.frameDroit_bas = customtkinter.CTkFrame(self.frameDroit, fg_color=back_color)
-        self.frameDroit_bas.grid(row=1, column=0, padx=5, pady=5)
-
-        ## Frame Droit
+        # -----------------------------------------------------------------------------------#
 
         # Frame Droit Haut (Affichage des valeurs en temps réel)
         self.labelAngle = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Angle")
         self.labelCouple = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Vitesse")
         self.labelTemps = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Temps")
 
-        self.valeurLabelPoignet = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16),
-                                                         text="Poignet : ")
-        self.valeurLabelCoude = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16),
-                                                         text="Coude : ")
-        self.valeurLabelEpaule = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16),
-                                                         text="Epaule : ")
+        self.valeurLabelPoignet = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Poignet : ")
+        self.valeurLabelCoude = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Coude : ")
+        self.valeurLabelEpaule = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="Epaule : ")
 
         self.valeurAnglePoignet = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
         self.valeurAngleCoude = customtkinter.CTkLabel(self.frameDroit_Haut, font=("Helvetica", 16), text="0")
@@ -266,12 +249,10 @@ class Application(customtkinter.CTk):
 
         self.labelTemps.grid(row=4, column=0)
         self.valeurTemps.grid(row=4, column=1)
+        # -----------------------------------------------------------------------------------#
 
         # Frame Droit Bas (Bouton d'arrêt)
-        self.boutonArret = customtkinter.CTkButton(self.frameDroit_bas, text="Bouton d'arrêt", font=("Helvetica", 12),command=self.commandeArret,
-                                                   width=120, height=120, corner_radius=150,
-                                                   fg_color="red2", hover_color="DarkRed")
-
+        self.boutonArret = customtkinter.CTkButton(self.frameDroit_bas, text="Bouton d'arrêt", font=("Helvetica", 12),command=self.commandeArret, width=120, height=120, corner_radius=150, fg_color="red2", hover_color="DarkRed")
         self.boutonArret.grid(row=0,column=0)
 
         threadUpdate = threading.Thread(target=self.set_valeur).start()
@@ -285,7 +266,6 @@ class Application(customtkinter.CTk):
         global vitesseEpaule
         global vitesseCoude
         global vitessePoignet
-        global mode_moteur
 
         while 1:
             self.valeurAnglePoignet.configure(text=str(anglePoignet*-1))
@@ -366,16 +346,17 @@ class Application(customtkinter.CTk):
             commandeEpauleMoteur = self.valeurEpauleEntry.get()
             if commandeEpauleMoteur == "":
                 commandeEpauleMoteur = 0
-            commandeMoteur = "1" + "," + str(commandePoignetMoteur) + "," + str(commandeCoudeMoteur)+ "," + str(commandeEpauleMoteur)
+            commandeMoteur = "1," + str(commandePoignetMoteur) + "," + str(commandeCoudeMoteur)+ "," + str(commandeEpauleMoteur)
             ancienneCommandeMoteur = commandeMoteur
 
-#Permet de lançer le graph dans un autre thread
+#Fonction de création du graphique
 def Graph():
     app = QApplication(sys.argv)
     window = RealTimePlot()
     window.show()
     sys.exit(app.exec_())
 
+#Fonction qui associe les bonnes valeurs aux variables
 def gestionPortSerie():
     global temps
     global angleCoude
@@ -407,8 +388,6 @@ def gestionPortSerie():
             commandeAEnvoyer = False
 
         time.sleep(0.1)
-        #print(stringAngle)
-        #print(mode_moteur)
 
 if __name__ == "__main__":
     app = Application()
