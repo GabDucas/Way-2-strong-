@@ -37,8 +37,7 @@ SemaphoreHandle_t mutex_data;
 
 
 
-//TODO: VOIR CHANGEMENT ET IMPLEMENTER!
-// JE VEUS UN ENUM QUI RELI CA À DES TRUCS CONCRET:
+// Les différents mode possible:
 enum TypeDeMode{
   E_STOP = 0,
   MANUEL = 1,
@@ -52,6 +51,7 @@ uint16_t runmode = E_STOP; // = 0 : E-stop
                  // = 2 : contrôle automatique anti-gravité
                  // = 3 : calibration
                  // = 4 : statique à la position actuelle
+                 // = 5 : routine de curl pour présentation
 
 //++++++++++++++++++++++++++++++++++++++++++++++VARIABLE POUR MOTEURS++++++++++++++++++++++++++++++++++++++++++++++
 // PARAMS SPÉCIFIQUE À OPENCR
@@ -72,9 +72,9 @@ double max_PWM_epaule = 0.0;
 double max_PWM_coude = 0.0;
 double max_PWM_poignet = 0.0;
 
-float zero_offset_epaule = -7.0;
-float zero_offset_coude = 23.0;// ??;
-float zero_offset_poignet = 123.46;
+float zero_offset_epaule = -84.0;
+float zero_offset_coude = 58.26;//23.0;// ??;
+float zero_offset_poignet = 123.0;
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -92,9 +92,9 @@ void setup()
   Serial.begin(9600);
 
   //++++++++++++++++SET_UP POUR MOTEUR++++++++++++++++
-  // Set Port baudrate to 57600bps. This has to match with DYNAMIXEL baudrate.
+  // Set Port baudrate pour la com opencr à 57600bps.
   dxl.begin(57600);
-  // Set Port Protocol Version. This has to match with DYNAMIXEL protocol version.
+  // Set Port Protocol Version.
   dxl.setPortProtocolVersion(DXL_PROTOCOL_VERSION);
   // Get DYNAMIXEL information
   dxl.ping(ID_EPAULE);
@@ -114,7 +114,7 @@ void setup()
   dxl.torqueOn(ID_POIGNET);
 
   //WIRE TABLE
-  // Limit the maximum velocity in Position Control Mode. Use 0 for Max speed
+  // Limite la vitesse maximal pour le mode en position.
   dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 30);
   dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 30);
   dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 30);
@@ -123,8 +123,8 @@ void setup()
   dxl.writeControlTableItem(VELOCITY_LIMIT, ID_COUDE, 1000);
   dxl.writeControlTableItem(VELOCITY_LIMIT, ID_POIGNET, 1000);
 
-  // TODO: À TESTER:
-  dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_EPAULE, 30);// TODO: VOIR SI CA MARCHE LOL
+  // Limite l'acceleration maximal pour le mode en position.
+  dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_EPAULE, 30);
   dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_COUDE, 30);
   dxl.writeControlTableItem(PROFILE_ACCELERATION, ID_POIGNET, 30);
 
@@ -132,24 +132,20 @@ void setup()
   dxl.writeControlTableItem(DRIVE_MODE, ID_COUDE, 0);
   dxl.writeControlTableItem(DRIVE_MODE, ID_EPAULE, 0);
 
-
   //++++++++++++++++++++++++++++++++++++++++++++++++++
-
+  // Set-up pour protéger les variables partagé entre les tâches.
   mutex_data = xSemaphoreCreateMutex();
 
   exo = updateExo(exo);
 
+  // Commencer et start des tasks.
   osThreadDef(interface, taskCommInterface, osPriorityNormal,0,2056);
-
   osThreadDef(moving_moteurs, moteurs_controls, osPriorityAboveNormal,0,2056);//changer test pour machine état moteurs PRIORITÉ BASSE 
+
   thread_id_moteurs_controls = osThreadCreate(osThread(moving_moteurs), NULL);
   thread_id_interface = osThreadCreate(osThread(interface), NULL);
 
-
   osKernelStart();
-  //SI JAMAIS ON A BESOIN
-  //xTaskCreate(test,      "comm openrb",1528,NULL,15,NULL);
-  // xTaskCreate(taskCalculTorque, "calcul",     2056,NULL,0,NULL); 
 }
 
 void loop()
@@ -176,7 +172,6 @@ void moteurs_controls( void const *pvParameters)
   bool state = 0;
 
   u_int8_t delay_task = 200;
-  u_int32_t count_loop_calib = 0;
   bool first = true;
 
   //++++++++++++++++++POUR CALIB+++++++++++++++++++++++++++++++++++++
@@ -187,22 +182,23 @@ void moteurs_controls( void const *pvParameters)
   float PWM_poignet = 0.0;
 
   u_int32_t count_curls = 0;
-
+  u_int32_t count_loop_calib = 0;
   //+++++++++++++++++++++++++++++++++++++++++++++++++++++++
   
   for(;;)
   {
     if( xSemaphoreTake(mutex_data,5) == pdTRUE ) 
     {
+      // Enregistre la structure contenant les variables partagé dans une variable temporaire.
+      // En même temps l'uptade des valeur à envoyé est appellé. 
       exo_temp = updateExo(exo);
       runmode_temp = runmode;
-      // Serial.println(runmode_temp);
       xSemaphoreGive(mutex_data);
     }
-    // runmode_temp = ANTI_GRATIVE;
 
     if(runmode_temp == runmode_temp_prev)
     {
+      // Si le mode demandé est le même que la dernière demnde c'est pas la première fois. 
       first = false;
     }
     else
@@ -213,6 +209,7 @@ void moteurs_controls( void const *pvParameters)
     switch(runmode_temp)
     {
       case E_STOP:
+        // Bloque le courant au moteur.
         dxl.torqueOff(ID_COUDE);
         dxl.torqueOff(ID_POIGNET);
         dxl.torqueOff(ID_EPAULE);
@@ -221,15 +218,16 @@ void moteurs_controls( void const *pvParameters)
       case MANUEL:
         if(first)
         {
+          // Chose à faire la première fois que le mode est appellé.
           set_mode(OP_EXTENDED_POSITION);
-
+          // Modifie les limite de vitesse et le profile.
           dxl.writeControlTableItem(VELOCITY_LIMIT, ID_EPAULE, 100);
           dxl.writeControlTableItem(VELOCITY_LIMIT, ID_COUDE, 100);
           dxl.writeControlTableItem(VELOCITY_LIMIT, ID_POIGNET, 100);
 
-          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 15);
-          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 15);
-          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 15);
+          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_EPAULE, 25);
+          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_COUDE, 25);
+          dxl.writeControlTableItem(PROFILE_VELOCITY, ID_POIGNET, 25);
 
           dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule + 200);
           dxl.setGoalPWM(ID_COUDE, max_PWM_coude + 200);
@@ -238,6 +236,7 @@ void moteurs_controls( void const *pvParameters)
         }
         if(exo_temp.epaule.commandeMoteur != commande_prev_epaule || exo_temp.coude.commandeMoteur != commande_prev_coude || exo_temp.poignet.commandeMoteur != commande_prev_poignet )
         {
+          // Envoie la commande au moteur seulement si la position demandé est différentes.
           set_PosGoal_deg(ID_COUDE, -exo_temp.coude.commandeMoteur + zero_offset_coude);
           set_PosGoal_deg(ID_EPAULE, -exo_temp.epaule.commandeMoteur + zero_offset_epaule);
           set_PosGoal_deg(ID_POIGNET, -exo_temp.poignet.commandeMoteur + zero_offset_poignet);
@@ -245,8 +244,6 @@ void moteurs_controls( void const *pvParameters)
       break;
       
     case ANTI_GRATIVE:
-
-      //+++++++++++++++++++++++++++++++++++++++++ANTI GRAVITE V3+++++++++++++++++++++++++++++++++++++++++
       if(first)
       {
         set_mode(OP_VELOCITY);
@@ -262,6 +259,7 @@ void moteurs_controls( void const *pvParameters)
         dxl.setGoalVelocity(ID_EPAULE,0);
         dxl.setGoalVelocity(ID_COUDE,0);
         dxl.setGoalVelocity(ID_POIGNET,0);
+
         dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule);
         dxl.setGoalPWM(ID_COUDE, max_PWM_coude);
         dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet);
@@ -270,77 +268,65 @@ void moteurs_controls( void const *pvParameters)
       //========================================================POIGNET======================================================== 
       if(abs(dxl.getPresentVelocity(ID_POIGNET)) <= 0.5)
       {
-        // count_low_velocity;
+        // Si la vitesse du moteur est basse met le goal à 0.
         dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet);
-
         dxl.setGoalVelocity(ID_POIGNET,0);
-        // Serial.println("POIGNET ZEROSSS");
       }
 
       else if(dxl.getPresentVelocity(ID_POIGNET) > 1)
       {
+        // Si l'utilisateur tente de faire bougé l'articulation vers le haut assiste à vitesse constante.
         dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet);
-
         dxl.setGoalVelocity(ID_POIGNET,50);
-        // Serial.println("POIGNET BAS");
       }
 
       else if(dxl.getPresentVelocity(ID_POIGNET) < -1)
       {
+        // Si l'utilisateur tente de faire bougé l'articulation vers le bas assiste à vitesse constante.
         dxl.setGoalPWM(ID_POIGNET, max_PWM_poignet);
-
         dxl.setGoalVelocity(ID_POIGNET,-50);
-        // Serial.println("POIGNET HAUT");
       }
       //========================================================COUDE======================================================== 
       if(abs(dxl.getPresentVelocity(ID_COUDE)) <= 0.5)
       {
-        // count_low_velocity;
+        // Si la vitesse du moteur est basse met le goal à 0.
         dxl.setGoalPWM(ID_COUDE, max_PWM_coude);
-
         dxl.setGoalVelocity(ID_COUDE,0);
-        // Serial.println("POIGNET ZEROSSS");
       }
 
       else if(dxl.getPresentVelocity(ID_COUDE) > 1)
       {
-        dxl.setGoalPWM(ID_COUDE, max_PWM_epaule/100);
-
+        // Si l'utilisateur tente de faire bougé l'articulation vers le haut assiste à vitesse constante.
+        dxl.setGoalPWM(ID_COUDE, 5);
         dxl.setGoalVelocity(ID_COUDE,-1);
-        // Serial.println("POIGNET BAS");
       }
 
       else if(dxl.getPresentVelocity(ID_COUDE) < -1)
       {
-        dxl.setGoalPWM(ID_COUDE, max_PWM_coude*2/3);
-
+        // Si l'utilisateur tente de faire bougé l'articulation vers le bas assiste à vitesse constante.
+        dxl.setGoalPWM(ID_COUDE, max_PWM_coude/2);
         dxl.setGoalVelocity(ID_COUDE,-50);
-        // Serial.println("POIGNET HAUT");
       }
       //========================================================EPAULE======================================================== 
       if(abs(dxl.getPresentVelocity(ID_EPAULE)) <= 0.5)
       {
-        // count_low_velocity;
+        // Si la vitesse du moteur est basse met le goal à 0.
         dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule);
-
         dxl.setGoalVelocity(ID_EPAULE,0);
-        // Serial.println("POIGNET ZEROSSS");
       }
 
       else if(dxl.getPresentVelocity(ID_EPAULE) > 1)
       {
-        dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule/200);
-
+        // Si l'utilisateur tente de faire bougé l'articulation vers le haut assiste à vitesse constante.
+        dxl.setGoalPWM(ID_EPAULE, 5);
         dxl.setGoalVelocity(ID_EPAULE,-1);
-        // Serial.println("POIGNET BAS");
       }
 
       else if(dxl.getPresentVelocity(ID_EPAULE) < -1)
       {
-        dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule*2/3);
-
+        // Si l'utilisateur tente de faire bougé l'articulation vers le haut assiste à vitesse constante.
+        dxl.setGoalPWM(ID_EPAULE, max_PWM_epaule/2);
         dxl.setGoalVelocity(ID_EPAULE,-50);
-        // Serial.println("POIGNET HAUT");
       }
       break;
 
@@ -561,8 +547,8 @@ void taskCommInterface(void const *pvParameters)
     }
 
     ////// Envoi à l'interface //////
-    // Serial.println(String(millis()/1000) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
-    //                 String(-exo_temp.poignet.velocite) +"," + String(-exo_temp.coude.velocite) + "," + String(-exo_temp.epaule.velocite));
+    Serial.println(String(millis()/1000) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
+                    String(-exo_temp.poignet.velocite) +"," + String(-exo_temp.coude.velocite) + "," + String(-exo_temp.epaule.velocite));
 
     ////// Réception de l'interface //////
     if(Serial.available())

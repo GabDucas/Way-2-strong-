@@ -106,11 +106,11 @@ void setup() {
 void loop() {
 
   DEBUG_SERIAL.print("THETA EPAULE: ");
-  DEBUG_SERIAL.print(dxl.getPresentVelocity(ID_EPAULE));
+  DEBUG_SERIAL.print(dxl.getPresentPosition(ID_EPAULE, UNIT_DEGREE));
   DEBUG_SERIAL.print(" THETA COUDE: ");
-  DEBUG_SERIAL.print(dxl.getPresentVelocity(ID_COUDE));
+  DEBUG_SERIAL.print(dxl.getPresentPosition(ID_COUDE, UNIT_DEGREE));
   DEBUG_SERIAL.print(" THETA POIGNET: ");
-  DEBUG_SERIAL.println(dxl.getPresentVelocity(ID_POIGNET));
+  DEBUG_SERIAL.println(dxl.getPresentPosition(ID_POIGNET, UNIT_DEGREE));
 
   // dxl.setGoalVelocity(ID_POIGNET,-10);
 
@@ -122,7 +122,7 @@ void loop() {
   // DEBUG_SERIAL.print(" OFFSET : ");
   // DEBUG_SERIAL.println(OP_EXTENDED_POSITION);
 
-  delay(10);
+  delay(1000);
 }
 
 void set_mode(int mode){
