@@ -511,14 +511,17 @@ bool set_PosGoal_deg(const uint8_t ID, float goal){
       goal = -89.0 + zero_offset_epaule;
   }
   
-  // if(ID == ID_COUDE)
-  // {
-  //   // if(goal - zero_offset_coude > 110.0)//TODO: JSP L'ANGLE À VERIF
-  //   //  goal = 110.0 + zero_offset_coude;
-
-  //   if(goal + zero_offset_coude < 0)
-  //     goal = zero_offset_coude;
-  // }
+  if(ID == ID_COUDE)
+  { 
+    if(goal <= zero_offset_coude - 115)
+    {
+      goal = -115 + zero_offset_coude;
+    }
+    if(goal > zero_offset_coude)
+    {
+      goal = zero_offset_coude;
+    }
+  }
 
   if(ID == ID_POIGNET)
   {
@@ -558,8 +561,8 @@ void taskCommInterface(void const *pvParameters)
     }
 
     ////// Envoi à l'interface //////
-    Serial.println(String(millis()/1000) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
-                    String(-exo_temp.poignet.velocite) +"," + String(-exo_temp.coude.velocite) + "," + String(-exo_temp.epaule.velocite));
+    // Serial.println(String(millis()/1000) + "," + String(exo_temp.poignet.angle) + "," + String(exo_temp.coude.angle) + "," + String(exo_temp.epaule.angle) + "," +
+    //                 String(-exo_temp.poignet.velocite) +"," + String(-exo_temp.coude.velocite) + "," + String(-exo_temp.epaule.velocite));
 
     ////// Réception de l'interface //////
     if(Serial.available())
