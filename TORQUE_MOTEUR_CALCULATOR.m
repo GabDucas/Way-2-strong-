@@ -38,7 +38,7 @@ L_coude2cm_ = 27*10^-3;%m
 L_dBeam = 4.23*10^-3;%m
 L_Bbeam_ = L_coude2+(L_dBeam/2);%m
 L_poignet1cm = 40*10^-3;%m 
-L_petitMoteur = 33.87*10^-3 + 19.86*10^-3;%m À CHANGER "19.86" centre de masse du moteur par rapport à la base du moteur
+L_petitMoteur = 33.87*10^-3 + 19.86*10^-3;%m 
 L_c1m_ = L_coude2+L_dBeam+L_poignet1cm;%m
 L_cTm_p_ = L_coude2+L_dBeam+L_petitMoteur;%m
 % A VÉRIFIER
