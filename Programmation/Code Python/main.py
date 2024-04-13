@@ -12,7 +12,7 @@ import pyqtgraph as pg
 from collections import deque
 #-----------------------------------------------------------------------------------#
 
-
+#Variables globales
 temps = 0
 
 angleEpaule = 0
@@ -28,6 +28,7 @@ ancienneCommandeMoteur = "commande de moteur"
 commandeAEnvoyer = False
 
 lock = threading.Lock()
+#-----------------------------------------------------------------------------------#
 
 #Classe permettant de gérer la lecture du port série
 class gestionPort():
@@ -37,12 +38,14 @@ class gestionPort():
         self.stringAngles = [0,0,0,0,0,0,0]
         self.serial_port = serial.Serial('COM3', 9600, timeout=1)
         self.serial_port.flush()
+
     def lireValeurs(self) -> []:
         if self.serial_port.in_waiting > 0:
             self.stringAngles = self.serial_port.readline().decode('utf-8').strip().split(',')
 
         return self.stringAngles
 
+    #Fonction d'envoie des commandes manuel
     def envoieCommande(self):
         global commandeMoteur
         global ancienneCommandeMoteur
@@ -275,7 +278,7 @@ class Application(customtkinter.CTk):
             self.valeurVitesseCoude.configure(text=str(vitesseCoude))
             self.valeurVitesseEpaule.configure(text=str(vitesseEpaule))
             self.valeurTemps.configure(text=str(temps))
-
+            time.sleep(0.1)
 
     def commandeArret(self):
         global commandeMoteur
@@ -285,6 +288,7 @@ class Application(customtkinter.CTk):
         commandeMoteur = "0,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
+        print("La commande moteur envoyée est: " + commandeMoteur)
 
     def commandeAntigrav(self):
         global commandeMoteur
@@ -294,7 +298,7 @@ class Application(customtkinter.CTk):
         commandeMoteur = "2,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
-
+        print("La commande moteur envoyée est: " + commandeMoteur)
 
     def commandeCalibration(self):
         global commandeMoteur
@@ -304,6 +308,7 @@ class Application(customtkinter.CTk):
         commandeMoteur = "3,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
+        print("La commande moteur envoyée est: " + commandeMoteur)
 
     def commandeStatique(self):
         global commandeMoteur
@@ -313,6 +318,7 @@ class Application(customtkinter.CTk):
         commandeMoteur = "4,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
+        print("La commande moteur envoyée est: " + commandeMoteur)
 
     def commandeCurl(self):
         global commandeMoteur
@@ -322,6 +328,7 @@ class Application(customtkinter.CTk):
         commandeMoteur = "5,0,0,0"
         commandeAEnvoyer = True
         ancienneCommandeMoteur = commandeMoteur
+        print("La commande moteur envoyée est: " + commandeMoteur)
 
 
     def commandeBouton(self):
@@ -343,6 +350,7 @@ class Application(customtkinter.CTk):
                 commandeEpauleMoteur = 0
             commandeMoteur = "1," + str(commandePoignetMoteur) + "," + str(commandeCoudeMoteur)+ "," + str(commandeEpauleMoteur)
             ancienneCommandeMoteur = commandeMoteur
+            print("La commande moteur envoyée est: " + commandeMoteur)
 
 #Fonction de création du graphique
 def Graph():
@@ -373,9 +381,11 @@ def gestionPortSerie():
             anglePoignet = float(stringAngle[1])
             angleCoude = float(stringAngle[2])
             angleEpaule = float(stringAngle[3])
-            vitesseEpaule = float(stringAngle[4])
+            vitessePoignet = float(stringAngle[4])
             vitesseCoude = float(stringAngle[5])
-            vitessePoignet = float(stringAngle[6])
+            vitesseEpaule = float(stringAngle[6])
+
+            print("Les valeurs reçues sont: " + str(temps) + " " + str(anglePoignet) + " " + str(angleCoude) + " " + str(angleEpaule)+  " " + str(vitessePoignet) +  " " + str(vitesseCoude) + " " + str(vitesseEpaule) )
 
 
         if (commandeAEnvoyer == True):
@@ -384,9 +394,13 @@ def gestionPortSerie():
 
         time.sleep(0.1)
 
-if __name__ == "__main__":
-    app = Application()
-    threadGraph = threading.Thread(target=Graph).start()
 
+
+
+
+if __name__ == "__main__":
+
+    threadGraph = threading.Thread(target=Graph).start()
     threadLireAngle = threading.Thread(target=gestionPortSerie).start()
+    app = Application()
     app.mainloop()
