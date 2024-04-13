@@ -1,30 +1,45 @@
-Way Too Strong
+# Way 2 Strong
 
-Bienvenue dans le GitHub de l'équipe Way Too Strong, composé de 6 futur ingénieurs robotique étudiant à l'université de Sherbrooke. Ce projet est dans la cadre de la session 4 de génie robotique. Il a pour but de créer un robot possèdant au minimum 3 joints. Les membres ont donc décider de faire un exosquelette d'un modèle réduit d'un bras.
+Bienvenue dans le GitHub de l'équipe Way 2 Strong, composé de 6 futurs ingénieurs et qui étudient en ce moment en génie robotique à l'université de Sherbrooke. Ce projet est dans le cadre de la session 4 de génie robotique. Il a pour but de créer un robot possédant au minimum 3 joints. Les membres ont donc décidé de faire un exosquelette d'un modèle réduit d'un bras.
 
-Installation :
+## Installation
 
-Pour installer le projet, la première étape à faire est l'impression 3D des différentes pièces. Pour l'assemblage des pièces, il est relativement facile. Il suffit de regarder l'assemblage SolidWork. Dans notre assemblage, le bois a été utilisé par soucis de temps et d'argent, mais il serait possible de faire des rails pour le rendre ajustable. 
+Pour l'installation du projet, il est possible d'aller voir la page Wiki du projet. Il sera possible de suivre les instructions d'assemblage et les différentes fonctionnalités du programme. Voici le lien pour rejoindre le Wiki : https://github.com/GabDucas/Way-2-strong-.wiki.git 
 
-Une fois le projet imprimé, il faut seulement brancher l'openCR (qui agit comme un Arduino) et de télécharger le code. Une fois le code téléchargé, deux fenêtres devraient s'ouvrir. La première fenêtre montre en temps réel la position du bras. La deuxième est la fenêtre de commande et montre quelques informations. Les informations affichées sont la valeur d'angles et de couples de chaques moteurs ainsi que le temps depuis le départ de l'openCR.
+## Brève description
 
-Liste des commandes :
+Ce projet est donc un modèle réduit d'un exosquelette. Il possède un bras imprimé avec une imprimante 3D, un faux-bras en bois et PLA, ainsi qu'une interface graphique qui montre en temps réel l'emplacement du bras ainsi que différentes valeurs d'angles et de couple moteur. 
 
-    Manuel -> Le mode manuel permet de contrôlé les moteurs en angle (degré). Il est possible de bouger un joint ou plusieurs joints. Automatiquement, si un moteur ne reçoit pas de commande, l'angle est à 0.
+Le bras possède en tout 3 moteurs, soit pour l'épaule, le coude et le poignet. Ils peuvent être contrôlés par plusieurs modes de contrôle :
+
+    Manuel -> Le mode manuel permet de contrôler les moteurs en angle (degré). Il est possible de bouger un ou plusieurs joints. Automatiquement, si un moteur ne reçoit pas de commande, l'angle est à 0.
     
-    Antigravité -> Le mode antigravité évite à l'exosquelette de s'affaiser lorsqu'il n'y a pas de commandes envoyées au moteur. 
+    Antigravité -> Le mode antigravité évite à l'exosquelette de s'affaisser lorsqu'il n'y a pas de commandes envoyées au moteur. 
     
-    Statique -> Le mode statique, s'il est couplé par exemple au mode antigravité, permet au robot, s'il est bougé, de revenir à la position enregistré lorsque le bouton statique est activé. 
+    Statique -> Le mode statique, s'il est couplé par exemple au mode antigravité, permet au robot, s'il est bougé, de revenir à la position enregistrée lorsque le bouton statique est activé. 
     
-    Calibration -> Permet de déterminer lorsque le bras est à sa pire position de voir les limites de PWM des trois moteurs. C'est la calibration de l'antigravité et don il faut que l'antigravité soit activée. La calibration se fait à chaque fois que le mode antigravité est commencé, mais il est possbile de la refaire.
+    Calibration -> Permet de déterminer lorsque le bras est à sa pire position de voir les limites de PWM des trois moteurs. À chaque démarrage, il faut que la calibration soit faite. Elle peut être refaite plus tard.
 
 Libraries à télécharger :
 
+- Sur Python:
+      - Time,
+        customtkinter,
+        Serial,
+        threading,
+        Numpy,
+        sys,
+        pyqt5,
+        pyqtgraph,
+        collections,
+
+- Sur Arduino:
+      - RTOS.h,
+        dynamixel2arduino.h
 
 Auteurs :
 
 Gabriel Aubut, Antoine Costa, Gabriel Ducas, Félix Duguay, Simon Lamontagne et Anaïs Mireault 
-
 
 
 
